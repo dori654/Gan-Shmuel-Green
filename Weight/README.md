@@ -5,3 +5,4 @@
 ```bash
 git clone ...
 cd weight
+create .env file and look at the .env.example
