@@ -17,6 +17,8 @@ def post_weight():
     containers = data["containers"]
     bruto = data["weight"]
     unit = data["unit"]
+    if unit.lower() in ["lbs", "lb"]:
+        bruto = int(float(bruto) * 0.453592)  # Convert lbs to kg
     force = data["force"]
     produce = data["produce"]
 
