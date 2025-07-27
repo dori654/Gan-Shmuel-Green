@@ -10,7 +10,7 @@ docker run -d -it --name ci_container ci
 #     "repository": {
 #       "name": "example-repo"
 #     }
-#   }
+#   }'
 
     # print(f"Received event: {event_type}")
     # return jsonify({'status': 'Ignored'}), 200  # Default response
