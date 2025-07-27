@@ -11,11 +11,13 @@ app = Flask(__name__)
 def trigger_ci():
     data = request.get_json()
     print (f"Received payload: {data}")
+    # save json to file for debugging
+    with open('/app/ci_payload.json', 'w') as f:
+        f.write(str(data))
     if not data:
         return jsonify({'error': 'Missing payload'}), 400
     event_type = request.headers.get('X-GitHub-Event', '')
     print(f"Received event: {event_type}")
-    return jsonify({'status': 'Ignored123'}), 200  # Default response
     if not data:
         return jsonify({'error': 'Missing payload'}), 400
 
