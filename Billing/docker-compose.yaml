@@ -1,0 +1,39 @@
+# Billing/docker-compose.yaml
+version: "3.9"
+
+services:
+  db:
+    build: ./db
+    container_name: billing_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: billingdb
+      MYSQL_USER: billinguser
+      MYSQL_PASSWORD: billingpassword
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - billing-data:/var/lib/mysql
+    ports:
+      - "8084:3306"
+
+  app:
+    build: ./app
+    container_name: billing_app
+    environment:
+      DB_HOST: db
+      DB_NAME: billingdb
+      DB_USER: billinguser
+      DB_PASSWORD: billingpassword
+      FLASK_APP: app.py
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8085:5002"
+
+volumes:
+  billing-data:

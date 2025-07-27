@@ -1,0 +1,41 @@
+# Weight/docker-compose.yaml
+version: "3.9"
+
+services:
+  db:
+    build: ./db
+    container_name: weight_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: weightdb
+      MYSQL_USER: weightuser
+      MYSQL_PASSWORD: weightpassword
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - weight-data:/var/lib/mysql
+    ports:
+      - "8082:3306"
+
+  app:
+    build: ./app
+    container_name: weight_app
+    environment:
+      DB_HOST: db
+      DB_NAME: weightdb
+      DB_USER: weightuser
+      DB_PASSWORD: weightpassword
+      FLASK_APP: app.py
+    volumes:
+      - ./in:/in
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8083:5005"
+
+volumes:
+  weight-data:

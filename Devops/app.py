@@ -1,51 +1,38 @@
-from flask import Flask
 
-app = Flask(__name__)
+import sys, time
+import requests
 
+def test_service(name, url):
+    """Test a service health endpoint"""
+    print(f"Testing {name} service at {url}")
+    for attempt in range(1, 11):
+        try:
+            r = requests.get(url, timeout=3)
+            if r.ok:
+                print(f"? {name} passed:", r.text[:80])
+                return True
+            print(f"? {name} unexpected status", r.status_code)
+        except Exception as exc:
+            print(f"? {name} {attempt}/10 waiting? {exc}")
+        time.sleep(3)
+    return False
 
-@app.route('/health')
-def health_check():
-    return 'OK', 200
+# Test both services
+services = [
+    ("Weight", "http://weight-app:5005/health"),
+    ("Billing", "http://billing-app:5002/health")
+]
 
+all_passed = True
+for name, url in services:
+    if not test_service(name, url):
+        print(f"? {name} CI failed ? service not healthy")
+        all_passed = False
+    print()
 
-
-def build_dev():
-    subprocess.run("docker compose Devops/docker-compose.tests.yaml", check=True)
-    if health_check() == True:
-        print("Development environment built successfully.")
-        return "Development environment built successfully."
-    else:
-        print("Failed to build development environment.")
-        return "Failed to build development environment."
-
-def build_prod():
-    subprocess.run("docker compose Devops/docker-compose.prod.yaml", check=True)
-    if health_check() == True:
-        print("Production environment built successfully.")
-        return "Production environment built successfully."
-    else:
-        print("Failed to build production environment.")
-        return "Failed to build production environment."
-    return "Production environment built successfully."
-
-@app.route('/push-dev', methods=['POST'])
-def push_dev(secret=None):
-    print("Push to dev branch triggered")
-    if build_dev() == "Development environment built successfully.":
-        return "Development environment built successfully.", 200
-    else:
-        return "Failed to build development environment.", 500
-
-
-@app.route('/push-main', methods=['POST'])
-def push_main(secret=None):
-    print("Push to main branch triggered")
-    if build_dev() == "Development environment built successfully.":
-        build_prod()
-        # deploy_prod()
-        return "Main environment built successfully.", 200
-    else:
-        return "Failed to build development environment.", 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+if all_passed:
+    print("?? All services are healthy! CI passed")
+    sys.exit(0)
+else:
+    print("? CI failed ? one or more services not healthy")
+    sys.exit(1)

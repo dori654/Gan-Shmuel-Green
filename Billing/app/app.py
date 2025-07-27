@@ -10,6 +10,11 @@ def create_app() -> Flask:
         """Simple JSON response for sanity?check / health?check."""
         return jsonify({"message": "Hello, Billing"})
 
+    @app.route("/health", methods=["GET"])
+    def health():
+        """Health check endpoint."""
+        return jsonify({"status": "healthy", "service": "billing"})
+
     return app
 
 

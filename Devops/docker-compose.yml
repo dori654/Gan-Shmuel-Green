@@ -1,50 +1,88 @@
 version: "3.9"
 
 services:
-  # Weight Service
-  weightdb:
+  # Weight services
+  weight-db:
     build: ../Weight/db
+    container_name: weight_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: weightdb
+      MYSQL_USER: weightuser
+      MYSQL_PASSWORD: weightpassword
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
       interval: 5s
       retries: 10
-  weight:
+      start_period: 30s
+    volumes:
+      - weight-data:/var/lib/mysql
+    ports:
+      - "8082:3306"
+
+  weight-app:
     build: ../Weight/app
+    container_name: weight_app
     environment:
-      DB_HOST: weightdb
+      DB_HOST: weight-db
       DB_NAME: weightdb
+      DB_USER: weightuser
+      DB_PASSWORD: weightpassword
     volumes:
       - ../Weight/in:/in
     depends_on:
-      weightdb:
+      weight-db:
         condition: service_healthy
+    ports:
+      - "8080:5005"
 
-  # Billing Service
-  billingdb:
+  # Billing services
+  billing-db:
     build: ../Billing/db
+    container_name: billing_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: billingdb
+      MYSQL_USER: billinguser
+      MYSQL_PASSWORD: billingpassword
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
       interval: 5s
       retries: 10
-  billing:
-    build: ../Billing/app
-    environment:
-      DB_HOST: billingdb
-      DB_NAME: billingdb
+      start_period: 30s
     volumes:
-      - ../Billing/in:/in
-    depends_on:
-      billingdb:
-        condition: service_healthy
+      - billing-data:/var/lib/mysql
+    ports:
+      - "8084:3306"
 
-  # Integration Tests
-  tester:
-    build: .
-    command: ["python", "-m", "pytest", "-q", "tests_int"]
-    volumes:
-      - ../Billing/tests:/tests_billing
-      - ../Weight/tests:/tests_weight
-      - ./tests_int:/tests_int
+  billing-app:
+    build: ../Billing/app
+    container_name: billing_app
+    environment:
+      DB_HOST: billing-db
+      DB_NAME: billingdb
+      DB_USER: billinguser
+      DB_PASSWORD: billingpassword
     depends_on:
-      - weight
-      - billing
+      billing-db:
+        condition: service_healthy
+    ports:
+      - "8081:5002"
+
+  # CI service
+  ci:
+    image: python:3.11-slim
+    working_dir: /ci
+    volumes:
+      - ./app.py:/ci/app.py     
+    depends_on:
+      weight-app:
+        condition: service_started
+      billing-app:
+        condition: service_started
+    command: >
+      sh -c "pip install -q requests && python app.py"
+
+volumes:
+  weight-data:
+  billing-data:
