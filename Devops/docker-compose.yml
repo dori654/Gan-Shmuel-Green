@@ -1,1 +1,50 @@
-version: '3.8'
+version: "3.9"
+
+services:
+  # Weight Service
+  weightdb:
+    build: ../Weight/db
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+  weight:
+    build: ../Weight/app
+    environment:
+      DB_HOST: weightdb
+      DB_NAME: weightdb
+    volumes:
+      - ../Weight/in:/in
+    depends_on:
+      weightdb:
+        condition: service_healthy
+
+  # Billing Service
+  billingdb:
+    build: ../Billing/db
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 10
+  billing:
+    build: ../Billing/app
+    environment:
+      DB_HOST: billingdb
+      DB_NAME: billingdb
+    volumes:
+      - ../Billing/in:/in
+    depends_on:
+      billingdb:
+        condition: service_healthy
+
+  # Integration Tests
+  tester:
+    build: .
+    command: ["python", "-m", "pytest", "-q", "tests_int"]
+    volumes:
+      - ../Billing/tests:/tests_billing
+      - ../Weight/tests:/tests_weight
+      - ./tests_int:/tests_int
+    depends_on:
+      - weight
+      - billing
