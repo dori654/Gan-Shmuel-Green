@@ -1,0 +1,7 @@
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: weightdb
+      MYSQL_USER: weightuser
+      MYSQL_PASSWORD: weightpassword
