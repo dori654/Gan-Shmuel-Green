@@ -2,14 +2,17 @@ import subprocess
 import requests
 import time
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK_URL")
 
 def notify_slack(message):
-    print(f"Sending notification to Slack: {message}")
     if not SLACK_WEBHOOK:
         print("No Slack webhook URL configured, skipping notification.")
         return
+    print(f"Sending notification to Slack: {message}")
     requests.post(SLACK_WEBHOOK, json={"text": message})
 
 def run_cmd(desc, cmd):
