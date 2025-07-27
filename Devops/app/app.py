@@ -1,4 +1,7 @@
 from flask import Flask, request, jsonify
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.ci_manager import run_ci_pipeline
 import os
 
@@ -35,4 +38,20 @@ def health():
     return "OK", 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    import ssl
+    import os
+    
+    # Check if SSL certificates exist
+    cert_file = '/app/cert.pem'
+    key_file = '/app/key.pem'
+    
+    if os.path.exists(cert_file) and os.path.exists(key_file):
+        # Run with HTTPS on port 8080
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context.load_cert_chain(cert_file, key_file)
+        print("Starting HTTPS server on port 8080...")
+        app.run(host='0.0.0.0', port=8080, ssl_context=context, debug=False)
+    else:
+        # Run with HTTP
+        print("Starting HTTP server on port 8080...")
+        app.run(host='0.0.0.0', port=8080)
