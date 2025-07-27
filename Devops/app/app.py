@@ -31,11 +31,13 @@ def trigger_ci():
     print(f"Branch name: {branch}")
     repo = data.get('repository', {}).get('name')
     print(f"Repository name: {repo}")
+    pusher_name= data.get('pusher', {}).get('name', 'unknown')
+    print(f"Pusher name: {pusher_name}")
 
     if not branch or not repo:
         return jsonify({'error': 'Missing branch or repository info'}), 400
 
-    result = run_ci_pipeline(branch)
+    result = run_ci_pipeline(branch, pusher_name)
     return jsonify({'status': result}), 200
 
 @app.route('/health', methods=['GET'])

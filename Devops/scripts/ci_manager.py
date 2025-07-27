@@ -31,9 +31,9 @@ def health_check(url):
         time.sleep(2 ** i)
     return False
 
-def run_ci_pipeline(branch):
+def run_ci_pipeline(branch, pusher_name='unknown'):
     try:
-        notify_slack(f"CI Started for branch: `{branch}`")
+        notify_slack(f"CI Started for branch: `{branch}` by `{pusher_name}`")
 
         run_cmd("Start test env", "docker compose -f docker-compose.test.yaml up -d --build")
         run_cmd("Run Pytest", "docker compose -f docker-compose.test.yaml exec -T app pytest")
