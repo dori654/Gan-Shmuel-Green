@@ -7,6 +7,9 @@ app = Flask(__name__)
 @app.route('/trigger', methods=['POST'])
 def trigger_ci():
     data = request.get_json()
+    print (f"Received payload: {data}")
+    if not data:
+        return jsonify({'error': 'Missing payload'}), 400
     event_type = request.headers.get('X-GitHub-Event', '')
     print(f"Received event: {event_type}")
     return jsonify({'status': 'Ignored123'}), 200  # Default response
