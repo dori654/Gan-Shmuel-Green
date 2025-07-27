@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-@app.route('/trigger', methods=['GET'])
+@app.route('/trigger', methods=['POST'])
 def trigger_ci():
     data = request.get_json()
     event_type = request.headers.get('X-GitHub-Event', '')
