@@ -8,12 +8,13 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       retries: 10
-      
+
   weight:
     build: ../Weight/app
+    env_file: .env
     environment:
-      DB_HOST: weightdb
-      DB_NAME: weightdb
+      DB_HOST: ${DB_HOST_WEIGHT}
+      DB_NAME: ${DB_NAME_WEIGHT}
     volumes:
       - ../Weight/in:/in
     depends_on:
@@ -29,12 +30,13 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       retries: 10
-      
+
   billing:
     build: ../Billing/app
+    env_file: .env
     environment:
-      DB_HOST: billingdb
-      DB_NAME: billingdb
+      DB_HOST: ${DB_HOST_BILLING}
+      DB_NAME: ${DB_NAME_BILLING}
     volumes:
       - ../Billing/in:/in
     depends_on:
@@ -46,10 +48,10 @@ services:
   # CI Manager
   ci:
     build: .
-    env_file: .env 
+    env_file: .env
     environment:
-      WEIGHT_URL: "http://weight:5005"
-      BILLING_URL: "http://billing:5002"
+      WEIGHT_URL: ${WEIGHT_URL}
+      BILLING_URL: ${BILLING_URL}
     depends_on:
       - weight
       - billing
