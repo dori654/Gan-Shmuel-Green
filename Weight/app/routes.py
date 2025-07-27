@@ -93,8 +93,46 @@ def post_weight():
 
 
 
-
-
 @api.route("/weight", methods=["GET"], strict_slashes=False)
 def get_weight():
-    return jsonify({"message": "Not implemented yet"}), 200
+    # Get query parameters
+    from_param = request.args.get("from")
+    to_param = request.args.get("to")
+    filters = request.args.get("filter", "in,out,none").split(",")
+
+    # Parse datetime strings (format: yyyymmddhhmmss)
+    def parse_timestamp(ts, default):
+        try:
+            return datetime.strptime(ts, "%Y%m%d%H%M%S")
+        except:
+            return default
+
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    from_time = parse_timestamp(from_param, today_start)
+    to_time = parse_timestamp(to_param, now)
+
+    # Get DB connection
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Build SQL query dynamically
+    placeholders = ",".join(["%s"] * len(filters))
+    query = f"""
+        SELECT id, direction, bruto, neto, produce, containers
+        FROM transactions
+        WHERE datetime BETWEEN %s AND %s
+        AND direction IN ({placeholders})
+        ORDER BY datetime DESC
+    """
+    cursor.execute(query, (from_time, to_time, *filters))
+    results = cursor.fetchall()
+
+    # Format containers field from CSV to list
+    for row in results:
+        row["containers"] = row["containers"].split(",") if row["containers"] else []
+        if row["neto"] is None:
+            row["neto"] = "na"
+
+    return jsonify(results), 200
