@@ -50,6 +50,7 @@ services:
     build: .
     env_file: .env
     environment:
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL}
       WEIGHT_URL: ${WEIGHT_URL}
       BILLING_URL: ${BILLING_URL}
     depends_on:
