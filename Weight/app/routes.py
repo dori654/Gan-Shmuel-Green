@@ -2,8 +2,16 @@ from flask import Blueprint, request, jsonify
 from app.db import get_db_connection
 from app.validators import validate_weight_payload
 from datetime import datetime
+import os
+import csv
+import json
+from werkzeug.utils import secure_filename
+UPLOAD_FOLDER = '/in'
 
 api = Blueprint('api', __name__)
+        
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 @api.route("/weight", methods=["POST"])
 def post_weight():
@@ -89,6 +97,62 @@ def post_weight():
             "bruto": bruto
         }), 201
 
+@api.route('/batch-weight', methods=['POST'])
+def upload_batch_weights():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part in the request'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    # Save file to /in folder
+    file.save(filepath)
+    containers = []
+    try:
+        if filename.endswith('.json'):
+            with open(filepath, 'r') as f:
+                containers = json.load(f)
+        elif filename.endswith('.csv'):
+            with open(filepath, newline='') as f:
+                reader = csv.reader(f)
+                headers = next(reader)
+                unit = headers[1].strip().lower()  # kg or lbs
+                if unit not in ['kg', 'lbs']:
+                    return jsonify({'error': f'Invalid unit: {unit}'}), 400
+                for row in reader:
+                    cid, weight = row
+                    weight = float(weight)
+                    if unit == 'lbs':
+                        weight = round(weight * 0.453592, 2)  # convert lbs to kg
+                        containers.append({
+                              'id': cid.strip(),
+                              'weight': weight,
+                              'unit': 'kg'
+                                })
+                    else:
+                        containers.append({
+                              'id': cid.strip(),
+                              'weight': weight,
+                              'unit': 'kg'
+                                })
+
+        else:
+            return jsonify({'error': 'Unsupported file format'}), 400
+         # Insert into DB
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        for c in containers:
+            cursor.execute("""
+                           INSERT INTO containers_registered (container_id, weight, unit)
+                           VALUES (%s, %s, %s)
+                           ON DUPLICATE KEY UPDATE weight=VALUES(weight), unit=VALUES(unit)
+                            """, (c['id'], c['weight'], c['unit']))
+        conn.commit()
+        return jsonify({'message': f'{len(containers)} containers inserted'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 
 
@@ -96,3 +160,4 @@ def post_weight():
 @api.route("/weight", methods=["GET"], strict_slashes=False)
 def get_weight():
     return jsonify({"message": "Not implemented yet"}), 200
+
