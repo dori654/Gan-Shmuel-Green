@@ -9,7 +9,7 @@ def trigger_ci():
     data = request.get_json()
     event_type = request.headers.get('X-GitHub-Event', '')
     print(f"Received event: {event_type}")
-    return jsonify({'status': 'Ignored'}), 200  # Default response
+    return jsonify({'status': 'Ignored123'}), 200  # Default response
     if not data:
         return jsonify({'error': 'Missing payload'}), 400
 
