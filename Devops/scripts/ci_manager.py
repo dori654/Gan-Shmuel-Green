@@ -3,7 +3,7 @@ import requests
 import time
 import os
 
-SLACK_WEBHOOK = os.getenv("SLACK_WEBHOOK_URL")
+SLACK_WEBHOOK = os.getenv('SLACK_WEBHOOK_URL')
 
 def notify_slack(message):
     print(f"Sending notification to Slack: {message}")
