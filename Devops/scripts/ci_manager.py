@@ -9,12 +9,12 @@ def notify_slack(message):
     requests.post(SLACK_WEBHOOK, json={"text": message})
 
 def run_cmd(desc, cmd):
-    print(f"🔧 {desc}: {cmd}")
+    print(f"Running {desc}: {cmd}")
     result = subprocess.run(cmd, shell=True)
     if result.returncode != 0:
-        notify_slack(f"❌ Failed: {desc}")
+        notify_slack(f"Failed: {desc}")
         raise Exception(f"Step failed: {desc}")
-    print(f"✅ Done: {desc}")
+    print(f"Done: {desc}")
 
 def health_check(url):
     for i in range(5):
@@ -29,7 +29,7 @@ def health_check(url):
 
 def run_ci_pipeline(branch):
     try:
-        notify_slack(f"🚀 CI Started for branch: `{branch}`")
+        notify_slack(f"CI Started for branch: `{branch}`")
 
         run_cmd("Start test env", "docker compose -f docker-compose.test.yaml up -d --build")
         run_cmd("Run Pytest", "docker compose -f docker-compose.test.yaml exec -T app pytest")
