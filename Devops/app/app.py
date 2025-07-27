@@ -26,8 +26,11 @@ def trigger_ci():
 
     # Parse branch from payload
     ref = data.get('ref', '')  # e.g. "refs/heads/main"
+    print(f"Branch ref: {ref}")
     branch = ref.split('/')[-1] if ref else None
+    print(f"Branch name: {branch}")
     repo = data.get('repository', {}).get('name')
+    print(f"Repository name: {repo}")
 
     if not branch or not repo:
         return jsonify({'error': 'Missing branch or repository info'}), 400
