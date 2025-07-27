@@ -8,12 +8,13 @@ app = Flask(__name__)
 def trigger_ci():
     data = request.get_json()
     event_type = request.headers.get('X-GitHub-Event', '')
-
+    print(f"Received event: {event_type}")
+    return jsonify({'status': 'Ignored'}), 200  # Default response
     if not data:
         return jsonify({'error': 'Missing payload'}), 400
 
     if event_type != 'push':
-        return jsonify({'status': 'Ignored – not a push event'}), 200
+        return jsonify({'status': 'Ignored ? not a push event'}), 200
 
     # Parse branch from payload
     ref = data.get('ref', '')  # e.g. "refs/heads/main"
