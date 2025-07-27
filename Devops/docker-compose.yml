@@ -46,6 +46,7 @@ services:
   # CI Manager
   ci:
     build: .
+    env_file: .env 
     environment:
       WEIGHT_URL: "http://weight:5005"
       BILLING_URL: "http://billing:5002"
