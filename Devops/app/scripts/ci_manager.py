@@ -34,7 +34,14 @@ def health_check(url):
         time.sleep(2 ** i)
     return False
 
-def run_ci_pipeline(branch, pusher_name='unknown', commit_message="unknown"):
+def run_ci_pipeline(payload):
+    # You can extract branch, repo, etc. from the payload here
+    ref = payload.get('ref', '')
+    branch = ref.split('/')[-1] if ref else None
+    commit_message = payload.get('head_commit', {}).get('message', 'unknown')
+    pusher_name = payload.get('pusher', {}).get('name', 'unknown')
+
+    print(f"Running CI for branch: {branch}, pusher: {pusher_name}, commit: {commit_message}")
     try:
         notify_slack(f"CI Started for branch: `{branch}` by `{pusher_name}`. Commit: `{commit_message}`")
 
@@ -56,3 +63,5 @@ def run_ci_pipeline(branch, pusher_name='unknown', commit_message="unknown"):
     except Exception as e:
         notify_slack(f"🔥 CI failed for `{branch}`: {str(e)}")
         return "CI failed"
+
+
