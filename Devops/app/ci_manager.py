@@ -35,7 +35,8 @@ def health_check(url):
     return False
 
 def run_ci_pipeline(payload):
-    # You can extract branch, repo, etc. from the payload here
+    #TODO: split functionability into branch name .{dev}{main}{wegiht,billing}
+    #TODO: add more error handling and logging
     ref = payload.get('ref', '')
     branch = ref.split('/')[-1] if ref else None
     commit_message = payload.get('head_commit', {}).get('message', 'unknown')
