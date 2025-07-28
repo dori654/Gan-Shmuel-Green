@@ -12,92 +12,113 @@ api = Blueprint('api', __name__)
         
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+conn = get_db_connection()
+cursor = conn.cursor(dictionary=True)
 
-@api.route("/weight", methods=["POST"])
+@api.route('/weight', methods=['POST'])
 def post_weight():
     data = request.get_json()
-    is_valid, error = validate_weight_payload(data)
-    if not is_valid:
-        return jsonify({"error": error}), 400
 
-    direction = data["direction"]
-    truck = data["truck"]
-    containers = data["containers"]
-    bruto = data["weight"]
-    unit = data["unit"]
-    if unit.lower() in ["lbs", "lb"]:
-        bruto = int(float(bruto) * 0.453592)  # Convert lbs to kg
-    force = data["force"]
-    produce = data["produce"]
+    direction = data.get('direction', '').lower()
+    truck = data.get('truck')
+    containers = data.get('containers', [])
+    produce = data.get('produce')
+    weight = data.get('weight')  # only for 'in'
 
+    if not all([direction, truck, produce]):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Convert containers to list if needed
+    if isinstance(containers, str):
+        container_ids = containers.split(",")
+    else:
+        container_ids = containers
+
+    # === Connect to DB ===
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Look for previous session if direction is "out"
-    if direction == "out":
-        cursor.execute(
-            "SELECT * FROM transactions WHERE truck = %s AND direction = 'in' ORDER BY datetime DESC LIMIT 1",
-            (truck,)
-        )
-        in_session = cursor.fetchone()
+    # === Lookup container weights ===
+    format_strings = ','.join(['%s'] * len(container_ids))
+    query = f"SELECT container_id, weight, unit FROM containers_registered WHERE container_id IN ({format_strings})"
+    cursor.execute(query, tuple(container_ids))
+    rows = cursor.fetchall()
 
-        if not in_session:
-            return jsonify({"error": "No prior 'in' session for this truck"}), 400
+    if len(rows) != len(container_ids):
+        found_ids = [row['container_id'] for row in rows]
+        missing = list(set(container_ids) - set(found_ids))
+        return jsonify({'error': f'Missing containers in DB: {missing}'}), 400
 
-        if in_session and not force:
-            # Check if already had an "out"
-            cursor.execute(
-                "SELECT * FROM transactions WHERE truck = %s AND direction = 'out' ORDER BY datetime DESC LIMIT 1",
-                (truck,)
-            )
-            out_session = cursor.fetchone()
-            if out_session and out_session["datetime"] > in_session["datetime"]:
-                return jsonify({"error": "Truck already weighed 'out'"}), 400
+    total_container_weight = 0
+    for row in rows:
+        if row['unit'] == 'lbs':
+            total_container_weight += int(row['weight'] * 0.453592)
+        else:
+            total_container_weight += row['weight']
 
-        # Get truckTara (bruto - in_session['bruto'])
-        truckTara = bruto
-        neto = calculate_neto(in_session["containers"], conn, in_session["bruto"], truckTara)
+    containers_str = ",".join(container_ids)
+    now = datetime.now()
 
-        cursor.execute(
-            "INSERT INTO transactions (datetime, direction, truck, containers, bruto, truckTara, neto, produce) VALUES (NOW(), %s, %s, %s, %s, %s, %s, %s)",
-            ("out", truck, in_session["containers"], bruto, truckTara, neto, produce)
-        )
+    if direction == 'in':
+        if weight is None:
+            return jsonify({'error': 'Bruto weight must be provided for IN direction'}), 400
+
+        cursor.execute("""
+            INSERT INTO transactions (datetime, direction, truck, containers, bruto, produce)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (now, 'in', truck, containers_str, weight, produce))
+
         conn.commit()
-        session_id = cursor.lastrowid
+        return jsonify({'message': 'Truck IN recorded', 'bruto': weight}), 201
 
-        return jsonify({
-            "id": session_id,
-            "truck": truck,
-            "bruto": bruto,
-            "truckTara": truckTara,
-            "neto": neto
-        }), 201
+    elif direction == 'out':
+        # Find last unmatched 'in' transaction
+        cursor.execute("""
+            SELECT id, bruto FROM transactions
+            WHERE truck = %s AND direction = 'in' AND truckTara IS NULL AND produce = %s
+            ORDER BY datetime DESC LIMIT 1
+        """, (truck, produce))
+        in_entry = cursor.fetchone()
 
-    else:  # "in" or "none"
-        # Check for repeated in
-        if direction == "in":
-            cursor.execute(
-                "SELECT * FROM transactions WHERE truck = %s AND direction = 'in' ORDER BY datetime DESC LIMIT 1",
-                (truck,)
-            )
-            in_session = cursor.fetchone()
-            if in_session and not force:
-                return jsonify({"error": "Truck already weighed 'in'"}), 400
+        if not in_entry:
+            return jsonify({'error': 'No matching IN transaction found'}), 404
 
-        containers_str = containers  # Already comma-separated
-        cursor.execute(
-            "INSERT INTO transactions (datetime, direction, truck, containers, bruto, truckTara, neto, produce) VALUES (NOW(), %s, %s, %s, %s, NULL, NULL, %s)",
-            (direction, truck, containers_str, bruto, produce)
-        )
+        # === Read truck weight from trucks.json ===
+        try:
+            trucks_path = os.path.join(os.path.dirname(__file__), 'in', 'trucks.json')
+            with open(trucks_path, 'r') as f:
+                truck_data = json.load(f)
+
+            truck_match = next((t for t in truck_data if t['id'] == truck), None)
+            if not truck_match:
+                return jsonify({'error': f'Truck ID {truck} not found in trucks.json'}), 404
+
+            truckTara = truck_match['weight']
+            if truck_match.get('unit') == 'lbs':
+                truckTara = int(truckTara * 0.453592)
+        except Exception as e:
+            return jsonify({'error': f'Error reading trucks.json: {str(e)}'}), 500
+
+        bruto = in_entry['bruto']
+        neto = bruto - truckTara - total_container_weight
+
+        # Update IN transaction
+        cursor.execute("""
+            UPDATE transactions SET truckTara = %s, neto = %s WHERE id = %s
+        """, (truckTara, neto, in_entry['id']))
+
+        # Insert OUT transaction
+        cursor.execute("""
+            INSERT INTO transactions (datetime, direction, truck, containers, bruto, truckTara, neto, produce)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (now, 'out', truck, containers_str, bruto, truckTara, neto, produce))
+
         conn.commit()
-        session_id = cursor.lastrowid
+        return jsonify({'message': 'Truck OUT recorded', 'neto': neto}), 201
 
-        return jsonify({
-            "message": f"Truck entered successfully",
-            "id": session_id,
-            "truck": truck,
-            "bruto": bruto
-        }), 201
+    else:
+        return jsonify({'error': 'Direction must be "in" or "out"'}), 400
+    
 
 @api.route('/batch-weight', methods=['POST'])
 def upload_batch_weights():
@@ -157,8 +178,11 @@ def upload_batch_weights():
 
 
 
+<<<<<<< HEAD
+=======
 
 
+>>>>>>> origin/weight
 @api.route("/weight", methods=["GET"], strict_slashes=False)
 def get_weight():
     # Get query parameters
