@@ -178,11 +178,6 @@ def upload_batch_weights():
 
 
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> origin/weight
 @api.route("/weight", methods=["GET"], strict_slashes=False)
 def get_weight():
     # Get query parameters
