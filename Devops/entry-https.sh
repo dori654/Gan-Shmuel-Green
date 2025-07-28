@@ -5,8 +5,10 @@
 
 docker rm -f $(docker ps -aq) 2>/dev/null || true
 docker build -t ci .
-docker run -d -it --name ci_container ci \
+docker run -d -it --name ci_container \
   -p 8080:8080 \
-  # -v $(pwd)/cert.pem:/app/cert.pem \
-  # -v $(pwd)/key.pem:/app/key.pem \
   ci
+
+
+    # -v $(pwd)/cert.pem:/app/cert.pem \
+  # -v $(pwd)/key.pem:/app/key.pem \
