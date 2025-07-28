@@ -1,6 +1,7 @@
 from flask import Flask, jsonify,request
 import mysql.connector
 import os
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -89,7 +90,33 @@ def update_truck(truck_id):
     conn.commit()
     return {"message": "Updated"}
 
+@app.route("/rates", methods=["POST"])
+def upload_rates():
+    path = "./in/rates.xlsx"
 
+    df = pd.read_excel(path)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM Rates")
+
+    for _, row in df.iterrows():
+        product_id = row["Product"] 
+        rate = int(row["Rate"])
+        scope = row["Scope"]
+
+        if pd.isna(scope) or str(scope).strip().lower() == "all":
+            scope = "All"
+        else:
+            scope = str(scope).strip()
+
+        cursor.execute(
+            "INSERT INTO Rates (product_id, rate, scope) VALUES (%s, %s, %s)",
+            (product_id, rate, scope)
+        )
+    conn.commit()
+    return {"message": "Rates uploaded successfully"}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
