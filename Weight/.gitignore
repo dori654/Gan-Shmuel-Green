@@ -1,0 +1,44 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Environment variable files
+.env
+
+# macOS and system files
+.DS_Store
+Thumbs.db
+
+# VSCode / IDE configs
+.vscode/
+.idea/
+
+# Docker
+*.log
+*.pid
+*.sock
+*.tar
+.docker/
+
+# Pytest cache
+.pytest_cache/
+.cache/
+
+# MySQL data if accidentally dumped
+*.sql~
+
+# Test coverage reports
+htmlcov/
+.coverage
+.tox/
+
+# Project metadata
+*.egg-info/
+dist/
+build/
