@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from scripts.ci_manager import run_ci_pipeline
+from ci_manager import run_ci_pipeline
 app = Flask(__name__)
 import threading
 
