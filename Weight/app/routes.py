@@ -204,3 +204,28 @@ def get_weight():
     return jsonify(results), 200
     
 
+@api.route('/unknown', methods=['GET'])
+def get_unknown_containers():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Step 1: Get known containers
+        cursor.execute("SELECT container_id FROM containers_registered")
+        known_containers = set(row[0] for row in cursor.fetchall())
+
+        # Step 2: Get all containers mentioned in transactions
+        cursor.execute("SELECT containers FROM transactions")
+        unknown_containers = set()
+        for (container_str,) in cursor.fetchall():
+            if container_str:
+                container_ids = [c.strip() for c in container_str.split(',')]
+                for cid in container_ids:
+                    if cid and cid not in known_containers:
+                        unknown_containers.add(cid)
+
+        return jsonify({"unknown_containers": sorted(list(unknown_containers))}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
