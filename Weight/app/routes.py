@@ -247,4 +247,46 @@ def get_unknown_containers():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
 
+@api.route("/session", methods=["GET"])
+def session_usage():
+    return jsonify({
+        "usage": "/session/<id>",
+        "example": "/session/3"
+    }), 400
+
+@api.route("/session/<int:session_id>", methods=["GET"])
+def get_session(session_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Fetch the IN transaction by ID
+    cursor.execute("SELECT * FROM transactions WHERE id = %s AND direction = 'in'", (session_id,))
+    in_tx = cursor.fetchone()
+
+    if not in_tx:
+        return jsonify({"error": "Session not found"}), 404
+
+    truck = in_tx["truck"]
+
+    # Look for matching OUT transaction for same truck, after the in
+    cursor.execute("""
+        SELECT * FROM transactions 
+        WHERE truck = %s AND direction = 'out' AND datetime > %s 
+        ORDER BY datetime ASC LIMIT 1
+    """, (truck, in_tx["datetime"]))
+    out_tx = cursor.fetchone()
+
+    # Build response
+    response = {
+        "id": in_tx["id"],
+        "truck": truck if truck else "na",
+        "bruto": in_tx["bruto"]
+    }
+
+    if out_tx:
+        response["truckTara"] = out_tx["truckTara"]
+        response["neto"] = out_tx["neto"] if out_tx["neto"] is not None else "na"
+
+    return jsonify(response), 200
