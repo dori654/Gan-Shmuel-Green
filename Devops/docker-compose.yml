@@ -7,7 +7,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../Billing:/build/billing
-      - ../Weights:/build/weight
+      - ../Weight:/build/weight
       - ~/logs:/logs
     environment:
       - SLACK_WEBHOOK_URL
