@@ -1,4 +1,7 @@
 Flask==2.3.3
 mysql-connector-python==8.4.0
 python-dotenv==1.0.1
+<<<<<<< HEAD
 Werkzeug==2.3.7
+=======
+>>>>>>> origin/weight
