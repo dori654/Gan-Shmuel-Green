@@ -20,7 +20,7 @@ services:
       context: .
     container_name: weight-app
     ports:
-      - "5000:5000"
+      - "8082:5000"
     depends_on:
       - db
     environment:
