@@ -11,4 +11,4 @@ docker run -d -it --name ci_container \
 
 
     # -v $(pwd)/cert.pem:/app/cert.pem \
-  # -v $(pwd)/key.pem:/app/key.pem \
+  # -v $(pwd)/key.pem:/app/key.pem \ 
