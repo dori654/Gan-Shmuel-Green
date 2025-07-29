@@ -50,6 +50,10 @@ def run_ci_pipeline(payload):
     branch = ref.split('/')[-1] if ref else None
     commit_message = payload.get('head_commit', {}).get('message', 'unknown')
     pusher_name = payload.get('pusher', {}).get('name', 'unknown')
+
+    run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /Gan-Shmuel-Green")
+    os.chdir("/Gan-Shmuel-Green")
+
     commit_hash = payload.get('head_commit', {}).get('id', 'unknown')
 
     print(f"Running CI for branch: {branch}, pusher: {pusher_name}, commit: {commit_message}")
@@ -73,23 +77,23 @@ def run_ci_pipeline(payload):
 
 
             #build weight image
-            build_weight_result = run_cmd("Build weight image", "docker compose -f ~/Weight/docker-compose.yaml up -d --build")
+            build_weight_result = run_cmd("Build weight image", "docker compose -f ./Weight/docker-compose.yml up -d --build")
             if build_weight_result.returncode != 0:
                 raise Exception("Failed to build weight image")
             
 
             #test weight image
-            test_weight_result = run_cmd("Run Pytest on Weight", "docker compose -f ~/Weight/docker-compose.test.yaml exec -T app pytest")
+            test_weight_result = run_cmd("Run Pytest on Weight", "docker compose -f ./Weight/docker-compose.test.yml exec -T app pytest")
             if test_weight_result.returncode != 0:
                 raise Exception("Pytest failed for Weight service")
 
             #build billing image
-            build_billing_result = run_cmd("Build billing image", "docker compose -f ~/Billing/docker-compose.yaml up -d --build")
+            build_billing_result = run_cmd("Build billing image", "docker compose -f ./Billing/docker-compose.yml up -d --build")
             if build_billing_result.returncode != 0:
                 raise Exception("Failed to build billing image")
 
             #test billing image
-            test_billing_result = run_cmd("Run Pytest on Billing", "docker compose -f ~/Billing/docker-compose.test.yaml exec -T app pytest")
+            test_billing_result = run_cmd("Run Pytest on Billing", "docker compose -f ./Billing/docker-compose.test.yml exec -T app pytest")
             if test_billing_result.returncode != 0:
                 raise Exception("Pytest failed for Billing service")
 
@@ -98,7 +102,7 @@ def run_ci_pipeline(payload):
             #rollback to the latest stable commit
             run_cmd("Rollback to latest stable commit", f"git reset --hard {latest_stable_commit}")
             notify_slack(f"Rolled back to latest stable commit: `{latest_stable_commit}`")
-            build_latest_stable_result = run_cmd("Build latest stable image", "docker compose -f ~/Devops/docker-compose.yaml up -d --build")
+            build_latest_stable_result = run_cmd("Build latest stable image", "docker compose -f ./Devops/docker-compose.yaml up -d --build")
             if build_latest_stable_result.returncode != 0:
                 notify_slack("🔥 Failed to build latest stable image after rollback")
                 return "CI failed after rollback"
