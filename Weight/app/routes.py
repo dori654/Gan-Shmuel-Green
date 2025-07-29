@@ -292,12 +292,11 @@ def get_session(session_id):
     return jsonify(response), 200
 
 #  GET /item/<id>?from=t1&to=t2
-@api.route("/item", methods=["GET"], strict_slashes=False)  
-def get_item():
+@api.route("/item/<get_id>", methods=["GET"], strict_slashes=False)  
+def get_item(get_id):
     # Get query parameters and times
     from_param = request.args.get("from")
     to_param = request.args.get("to")
-    get_id = request.args.get("id")  
 
     # Parse datetime strings (format: yyyymmddhhmmss)
     def parse_timestamp(ts, default):
