@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, send_file
 import mysql.connector
 import os
 import pandas as pd
-
+from datetime import datetime
 from db import get_db_connection 
 
 routes = Blueprint("routes", __name__)
@@ -262,3 +262,56 @@ def totalbill(provider_id):
         "total":        total_pay
     }
     return jsonify(bill), 200
+
+@routes.route("/truck/<string:truck_id>", methods=["GET"])
+def get_truck_data(truck_id):
+    t1 = request.args.get("from")
+    t2 = request.args.get("to")
+
+    now = datetime.now().strftime("%Y%m%d%H%M%S")
+    first_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0).strftime("%Y%m%d%H%M%S")
+
+    if not t1:
+        t1 = first_of_month
+    if not t2:
+        t2 = now
+
+    try:
+        dt_from = datetime.strptime(t1, "%Y%m%d%H%M%S")
+        dt_to = datetime.strptime(t2, "%Y%m%d%H%M%S")
+    except ValueError:
+        return {"error": "Invalid datetime format. Use yyyymmddhhmmss"}, 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM Trucks WHERE id = %s", (truck_id,))
+
+    truck = cursor.fetchone()
+    if not truck:
+        return {"error": "Truck not found"}, 404
+
+    cursor.execute("""
+        SELECT truckTara FROM Transactions
+        WHERE truck = %s AND truckTara IS NOT NULL
+        ORDER BY datetime DESC
+        LIMIT 1
+    """, (truck_id,))
+    tara_row = cursor.fetchone()
+    tara = tara_row["truckTara"] if tara_row else None
+
+    cursor.execute("""
+        SELECT DISTINCT session_id FROM Transactions
+        WHERE truck = %s AND datetime BETWEEN %s AND %s
+        ORDER BY session_id ASC
+    """, (truck_id, dt_from, dt_to))
+    sessions = [row["session_id"] for row in cursor.fetchall()]
+
+    cursor.close()
+    conn.close()
+
+    return jsonify({
+        "id": truck_id,
+        "tara": tara,
+        "sessions": sessions
+    })
