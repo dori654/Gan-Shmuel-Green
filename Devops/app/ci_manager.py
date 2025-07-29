@@ -75,6 +75,7 @@ def run_ci_pipeline(payload):
             #git fetch origin devops_build_tests
             print(f"Pulling latest commit for branch: {branch}")
             sync_branch(branch)
+            time.sleep(10)  # wait for the branch to sync
 
             #export environment variables
             run_cmd("Export environment variables", "export $(cat .env | xargs)")
