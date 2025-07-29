@@ -1,4 +1,3 @@
-
 services:
   db:
     image: mysql:8.0
@@ -14,20 +13,19 @@ services:
       - db_data:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
     ports:
-      - "3306:3306"
+      - “3306:3306”
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [“CMD”, “mysqladmin”, “ping”, “-h”, “localhost”]
       interval: 5s
       retries: 10
-
   app:
     build:
       context: .
     container_name: weight-app
     ports:
-      - "8082:5000"
+      - “5000:5000”
     depends_on:
-      db: 
+      db:
         condition: service_healthy
     environment:
       DB_HOST: db
@@ -36,10 +34,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       TZ: Asia/Jerusalem
-    volumes:
-      - ./app:/app/app  # Mount just your app code for hot-reload (optional)
-      - ./tests:/app/tests
-    command: ["python", "-m", "app.main"]
-
+    # volumes:
+      # - ./app:/app/app  # Mount just your app code for hot-reload (optional)
+      # - ./tests:/app/tests
+    command: [“python”, “-m”, “app.main”]
 volumes:
-  db_data: {} 
+  db_data: {}

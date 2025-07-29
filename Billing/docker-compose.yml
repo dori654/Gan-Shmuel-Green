@@ -3,8 +3,6 @@ services:
     image: mysql:8.0
     container_name: mysql-db
     restart: always
-    env_file:
-      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -15,7 +13,6 @@ services:
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - backend
-
   flask:
     build:
       context: ./app
@@ -23,7 +20,7 @@ services:
     depends_on:
       - db
     ports:
-      - "8081:5000"
+      - “8081:5000”
     environment:
       DB_HOST: db
       DB_NAME: ${MYSQL_DATABASE}
@@ -31,10 +28,8 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
     - ./app/in/rates.xlsx:/app/in/rates.xlsx
-    - ./logs:/app/logs
     networks:
       - backend
-
 networks:
   backend:
 volumes:
