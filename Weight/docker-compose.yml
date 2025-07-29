@@ -36,9 +36,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       TZ: Asia/Jerusalem
-    volumes:
-      - ./app:/app/app  # Mount just your app code for hot-reload (optional)
-      - ./tests:/app/tests
+    # volumes:
+      # - ./app:/app/app  # Mount just your app code for hot-reload (optional)
+      # - ./tests:/app/tests
     command: ["python", "-m", "app.main"]
 
 volumes:
