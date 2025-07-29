@@ -45,6 +45,7 @@ def get_latest_stable_commit():
         return '3a3aab312c5837e57a1a21ca8e219ae82c0a28d9'  # Fallback to a known commit hash
     
 def sync_branch(branch):
+    subprocess.run(f"git fetch", shell=True, check=True)
     subprocess.run(f"git checkout {branch}", shell=True, check=True)
     subprocess.run(f"git fetch origin {branch}", shell=True, check=True)
     subprocess.run(f"git reset --hard origin/{branch}", shell=True, check=True)
@@ -58,8 +59,7 @@ def run_ci_pipeline(payload):
     commit_message = payload.get('head_commit', {}).get('message', 'unknown')
     pusher_name = payload.get('pusher', {}).get('name', 'unknown')
 
-    run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /builder")
-    os.chdir("/builder")
+
 
 
     commit_hash = payload.get('head_commit', {}).get('id', 'unknown')
@@ -69,6 +69,9 @@ def run_ci_pipeline(payload):
         notify_slack(f"CI Started for branch: `{branch}` by `{pusher_name}`. Commit: `{commit_message}`")
 
         if branch == "devops_build_tests":
+          run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /builder")
+          os.chdir("/builder")
+
           latest_stable_commit = get_latest_stable_commit()
           try:
               
@@ -136,4 +139,4 @@ def run_ci_pipeline(payload):
         notify_slack(f"🔥 CI failed for `{branch}`: {str(e)}")
         return "CI failed"
 
-#mini change - build please!!!?
+#mini change - build please!!!?!
