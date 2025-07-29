@@ -78,8 +78,9 @@ def test_post_weight_in(client, setup_container):
 
     assert response.status_code == 201
     resp_json = response.get_json()
-    assert "Truck IN recorded" in resp_json.get("message", "")
     assert resp_json.get("bruto") == 1000
+    assert resp_json.get("truck") == "truck123"
+    assert "id" in resp_json
 
 
 def test_post_weight_out(client):
