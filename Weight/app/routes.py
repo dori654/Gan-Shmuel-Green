@@ -15,6 +15,15 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 conn = get_db_connection()
 cursor = conn.cursor(dictionary=True)
 
+@api.route('/kobi', methods=['GET'])
+def get_kobi():
+    return jsonify({
+        'kobi': 'Gan Shmuel Green',
+        'version': '1.0.0',
+        'description': 'API for managing truck weights and transactions'
+    })
+
+
 @api.route('/weight', methods=['POST'])
 def post_weight():
     data = request.get_json()

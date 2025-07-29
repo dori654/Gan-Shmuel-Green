@@ -7,6 +7,14 @@ from db import get_db_connection
 
 routes = Blueprint("routes", __name__)
 
+@routes.route('/kobi', methods=['GET'])
+def get_kobi():
+    return jsonify({
+        'kobi': 'Gan Shmuel Green',
+        'version': '1.0.0',
+        'description': 'API for managing truck weights and transactions'
+    })
+
 @routes.route('/')
 def index():
     conn = get_db_connection()
