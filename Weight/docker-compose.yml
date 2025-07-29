@@ -18,7 +18,7 @@ services:
       - ./app:/app/app  # Optional: hot-reload if desired
     command: ["python", "-m", "app.main.py"]
     networks:
-      - prod_network
+      - gan-shmuel
 
   db_weight:
     container_name: weight-db
@@ -37,10 +37,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - prod_network
+      - gan-shmuel
 
 networks:
-  prod_network:
+  gan-shmuel:
     external: true
 
 volumes:
