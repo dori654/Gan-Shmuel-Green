@@ -56,7 +56,7 @@ services:
     networks:
       - backend
 
-networks:
+networks: 
   backend:
 
 volumes:
