@@ -6,8 +6,7 @@ services:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ../Billing:/build/billing
-      - ../Weight:/build/weight
+      - /gan-shmuel-builds:/builds
       - ~/logs:/logs
     environment:
       - SLACK_WEBHOOK_URL
