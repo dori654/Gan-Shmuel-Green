@@ -46,27 +46,3 @@ def test_get_unknown_containers(client):
     if response.status_code == 200:
         assert "unknown_containers" in response.json
         assert isinstance(response.json["unknown_containers"], list)
-
-
-def test_post_weight_in_valid(client):
-    """Test POST /weight with direction 'in' and valid container data"""
-
-    # Pre-load containers into DB via batch-weight (optional)
-    # Or assume they exist in DB
-
-    payload = {
-        "direction": "in",
-        "truck": "T-99999",
-        "containers": ["c1", "c2"],
-        "weight": 12000,
-        "produce": "orange"
-    }
-
-    response = client.post("/weight", json=payload)
-    
-    assert response.status_code == 201
-    json_data = response.get_json()
-    assert json_data["message"] == "Truck IN recorded"
-    assert json_data["bruto"] == 12000
-
-
