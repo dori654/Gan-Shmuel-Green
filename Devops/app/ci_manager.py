@@ -58,8 +58,9 @@ def run_ci_pipeline(payload):
     commit_message = payload.get('head_commit', {}).get('message', 'unknown')
     pusher_name = payload.get('pusher', {}).get('name', 'unknown')
 
-    run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /Gan-Shmuel-Green")
     os.chdir("/Gan-Shmuel-Green")
+    run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /Gan-Shmuel-Green")
+
 
     commit_hash = payload.get('head_commit', {}).get('id', 'unknown')
 
