@@ -46,10 +46,15 @@ def get_latest_stable_commit():
     
 def sync_branch(branch):
     subprocess.run(f"git fetch", shell=True, check=True)
+    print("KOBI - git fetch")
     subprocess.run(f"git checkout {branch}", shell=True, check=True)
+    print(f"KOBI - git checkout {branch}")
     subprocess.run(f"git fetch origin {branch}", shell=True, check=True)
+    print(f"KOBI - git fetch origin {branch}")
     subprocess.run(f"git reset --hard origin/{branch}", shell=True, check=True)
+    print(f"KOBI - git reset --hard origin/{branch}")
     subprocess.run(f"git pull", shell=True, check=True)
+    print(f"KOBI - git pull")
     print(f"{branch} is up to date")
 
 def run_ci_pipeline(payload):
