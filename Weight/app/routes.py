@@ -69,7 +69,7 @@ def post_weight():
         """, (now, 'in', truck, containers_str, weight, produce))
 
         conn.commit()
-        return jsonify({'message': 'Truck IN recorded', 'bruto': weight}), 201
+        return jsonify({'id': str(cursor.lastrowid), 'truck': truck if truck else 'na', 'bruto': weight}), 201
 
     elif direction == 'out':
         # Find last unmatched 'in' transaction
@@ -114,7 +114,8 @@ def post_weight():
         """, (now, 'out', truck, containers_str, bruto, truckTara, neto, produce))
 
         conn.commit()
-        return jsonify({'message': 'Truck OUT recorded', 'neto': neto}), 201
+        return jsonify({'message': 'Truck OUT recorded', 'truckTara': truckTara, 'neto': neto}), 201
+
 
     else:
         return jsonify({'error': 'Direction must be "in" or "out"'}), 400
@@ -205,7 +206,7 @@ def get_weight():
     # Build SQL query dynamically
     placeholders = ",".join(["%s"] * len(filters))
     query = f"""
-        SELECT id, direction, bruto, neto, produce, containers
+        SELECT id, datetime, direction, truck, containers, bruto, truckTara, neto, produce
         FROM transactions
         WHERE datetime BETWEEN %s AND %s
         AND direction IN ({placeholders})
@@ -221,6 +222,7 @@ def get_weight():
             row["neto"] = "na"
 
     return jsonify(results), 200
+
     
 
 @api.route('/unknown', methods=['GET'])
@@ -270,12 +272,12 @@ def get_session(session_id):
 
     truck = in_tx["truck"]
 
-    # Look for matching OUT transaction for same truck, after the in
+    # Look for matching OUT transaction for same truck, after or equal to IN datetime, and not the same row
     cursor.execute("""
         SELECT * FROM transactions 
-        WHERE truck = %s AND direction = 'out' AND datetime > %s 
+        WHERE truck = %s AND direction = 'out' AND datetime >= %s AND id != %s
         ORDER BY datetime ASC LIMIT 1
-    """, (truck, in_tx["datetime"]))
+    """, (truck, in_tx["datetime"], in_tx["id"]))
     out_tx = cursor.fetchone()
 
     # Build response
@@ -290,6 +292,7 @@ def get_session(session_id):
         response["neto"] = out_tx["neto"] if out_tx["neto"] is not None else "na"
 
     return jsonify(response), 200
+
 
 #  GET /item/<id>?from=t1&to=t2
 @api.route("/item/<get_id>", methods=["GET"], strict_slashes=False)  
@@ -348,3 +351,4 @@ def get_item(get_id):
                 "tara": tara if tara is not None else "na",
                 "sessions": session_id}
     return jsonify(response), 200
+

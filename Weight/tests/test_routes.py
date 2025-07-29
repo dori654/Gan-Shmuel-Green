@@ -50,6 +50,7 @@ def test_get_unknown_containers(client):
     if response.status_code == 200:
         assert "unknown_containers" in response.json
         assert isinstance(response.json["unknown_containers"], list)
+
 @pytest.fixture
 def setup_container(client):
     """Insert a test container into the DB before IN test"""

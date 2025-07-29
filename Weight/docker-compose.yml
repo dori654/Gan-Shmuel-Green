@@ -9,6 +9,7 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Jerusalem
     volumes:
       - db_data:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
@@ -34,10 +35,11 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      TZ: Asia/Jerusalem
     volumes:
       - ./app:/app/app  # Mount just your app code for hot-reload (optional)
       - ./tests:/app/tests
     command: ["python", "-m", "app.main"]
 
 volumes:
-  db_data:
+  db_data: {} 
