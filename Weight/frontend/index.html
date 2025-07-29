@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת שקילה - גן שמואל</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-weight-hanging"></i> מערכת שקילה - גן שמואל</h1>
+                <div class="header-actions">
+                    <span class="current-time" id="currentTime"></span>
+                    <button class="btn btn-secondary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> רענן
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('weighing')">
+                <i class="fas fa-scale-balanced"></i> שקילה
+            </button>
+            <button class="nav-tab" onclick="showTab('sessions')">
+                <i class="fas fa-list"></i> רשימת פעולות
+            </button>
+            <button class="nav-tab" onclick="showTab('unknown')">
+                <i class="fas fa-question-circle"></i> משאיות לא סגורות
+            </button>
+            <button class="nav-tab" onclick="showTab('history')">
+                <i class="fas fa-history"></i> היסטוריה
+            </button>
+            <button class="nav-tab" onclick="showTab('containers')">
+                <i class="fas fa-box"></i> רישום מכולות
+            </button>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Weighing Tab -->
+            <div id="weighing-tab" class="tab-content active">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-scale-balanced"></i> שקילת משאית</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="weighingForm" class="weighing-form">
+                            <!-- Direction must be selected first -->
+                            <div class="form-row">
+                                <div class="form-group" style="width: 100%;">
+                                    <label for="direction">כיוון * (בחר ראשון)</label>
+                                    <select id="direction" name="direction" required>
+                                        <option value="">בחר כיוון...</option>
+                                        <option value="in">כניסה</option>
+                                        <option value="out">יציאה</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Other fields (disabled until direction is selected) -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="truck">מספר משאית *</label>
+                                    <!-- Select field for entry -->
+                                    <select id="truckEntry" name="truckEntry" style="display: none;" disabled>
+                                        <option value="">בחר משאית לכניסה...</option>
+                                    </select>
+                                    <!-- Select field for exit -->
+                                    <select id="truckExit" name="truckExit" style="display: none;" disabled>
+                                        <option value="">בחר משאית ליציאה...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="produce">סוג תוצרת *</label>
+                                    <select id="produce" name="produce" required disabled>
+                                        <option value="">בחר כיוון קודם...</option>
+                                        <option value="oranges">תפוזים</option>
+                                        <option value="lemons">לימונים</option>
+                                        <option value="grapefruits">אשכוליות</option>
+                                        <option value="apples">תפוחים</option>
+                                        <option value="other">אחר</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="bruto">משקל תוצרת (ק"ג) *</label>
+                                    <input type="number" id="bruto" name="bruto" min="0" step="0.1" required disabled placeholder="בחר כיוון קודם">
+                                </div>
+                                <div class="form-group">
+                                    <label for="containers">מכולה</label>
+                                    <select id="containers" name="containers" disabled>
+                                        <option value="">בחר כיוון קודם...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> שמור שקילה
+                                </button>
+                                <button type="reset" class="btn btn-secondary">
+                                    <i class="fas fa-undo"></i> נקה טופס
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Current Scale Display -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-weight"></i> תצוגת מאזניים נוכחית</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="scale-display">
+                            <div class="weight-value" id="currentWeight">0.0</div>
+                            <div class="weight-unit">ק"ג</div>
+                        </div>
+                        <button class="btn btn-info" onclick="getCurrentWeight()">
+                            <i class="fas fa-sync"></i> קרא משקל נוכחי
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sessions Tab -->
+            <div id="sessions-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-list"></i> רשימת פעולות שקילה</h2>
+                        <div class="card-actions">
+                            <select id="sessionFilter">
+                                <option value="all">כל הפעולות</option>
+                                <option value="in">כניסות בלבד</option>
+                                <option value="out">יציאות בלבד</option>
+                                <option value="completed">פעולות שלמות</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table id="sessionsTable" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>מזהה</th>
+                                        <th>תאריך ושעה</th>
+                                        <th>משאית</th>
+                                        <th>כיוון</th>
+                                        <th>תוצרת</th>
+                                        <th>ברוטו</th>
+                                        <th>טרה</th>
+                                        <th>נטו</th>
+                                        <th>מכולות</th>
+                                        <th>פעולות</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessionsTableBody">
+                                    <!-- Data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Unknown Trucks Tab -->
+            <div id="unknown-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-question-circle"></i> משאיות לא סגורות</h2>
+                        <p class="card-subtitle">משאיות שנכנסו אך לא יצאו</p>
+                    </div>
+                    <div class="card-body">
+                        <div id="unknownTrucksList" class="unknown-trucks-list">
+                            <!-- Data will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-history"></i> היסטוריית פריט</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-search">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="itemId">בחר פריט (משאית או מכולה)</label>
+                                    <select id="itemId">
+                                        <option value="">בחר פריט...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fromDate">מתאריך</label>
+                                    <input type="datetime-local" id="fromDate">
+                                </div>
+                                <div class="form-group">
+                                    <label for="toDate">עד תאריך</label>
+                                    <input type="datetime-local" id="toDate">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="searchHistory()">
+                                <i class="fas fa-search"></i> חפש
+                            </button>
+                        </div>
+                        <div id="historyResults" class="history-results">
+                            <!-- Results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Containers Tab -->
+            <div id="containers-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-box"></i> רישום מכולות</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-section">
+                            <h3>העלאת קובץ CSV</h3>
+                            <div class="file-upload">
+                                <input type="file" id="csvFile" accept=".csv" class="file-input">
+                                <label for="csvFile" class="file-label">
+                                    <i class="fas fa-upload"></i> בחר קובץ CSV
+                                </label>
+                                <button class="btn btn-primary" onclick="uploadContainers()">
+                                    <i class="fas fa-save"></i> העלה מכולות
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="manual-entry">
+                            <h3>רישום ידני</h3>
+                            <form id="containerForm" class="container-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="containerId">מזהה מכולה</label>
+                                        <input type="text" id="containerId" placeholder="C-001">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="containerWeight">משקל (ק"ג)</label>
+                                        <input type="number" id="containerWeight" min="0" step="0.1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="containerUnit">יחידה</label>
+                                        <select id="containerUnit">
+                                            <option value="kg">ק"ג</option>
+                                            <option value="lbs">פאונד</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> הוסף מכולה
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>טוען...</p>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
