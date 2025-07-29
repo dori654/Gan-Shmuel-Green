@@ -40,7 +40,7 @@ def get_latest_stable_commit():
         commit_hash = result.stdout.strip()
         print(f"Current commit hash: {commit_hash}")
         return commit_hash
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         print(f"Error getting latest stable commit: {e}")
         return '3a3aab312c5837e57a1a21ca8e219ae82c0a28d9'  # Fallback to a known commit hash
 
