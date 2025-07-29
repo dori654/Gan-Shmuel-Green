@@ -12,8 +12,6 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
-    ports:
-      - "3306:3306"
 
   app:
     build:
@@ -31,7 +29,7 @@ services:
       DB_NAME: ${DB_NAME}
     volumes:
       - ./app:/app/app  # Mount just your app code for hot-reload (optional)
-    command: ["python", "-m", "app.main"]
+    command: ["python", "-m", "app/main.py"]
 
 volumes:
   db_data:
