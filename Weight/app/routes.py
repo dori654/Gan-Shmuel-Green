@@ -24,16 +24,15 @@ def get_kobi():
     })
 
 
-
+#send to http://localhost:8081/dori
 @api.route('/dori', methods=['GET'])
-def find_dori():
+def get_dori():
     return jsonify({
-        'kobi': 'Gan Shmuel Green',
+        'dori': 'Gan Shmuel Green',
         'version': '1.0.0',
-        'description': 'API for managing truck weights and transactions',
-        'dori': 'Dori is here!'
-
+        'description': 'API for managing truck weights and transactions'
     })
+
 
 
 @api.route('/weight', methods=['POST'])

@@ -15,6 +15,15 @@ def get_kobi():
         'description': 'API for managing truck weights and transactions'
     })
 
+#get from http://localhost:8082/dori
+routes.route('/dori', methods=['POST'])
+def post_dori():
+    data = request.get_json()
+    if not data or 'message' not in data:
+        return jsonify({'error': 'Invalid input'}), 400
+    message = data['message']
+    return jsonify({'message': f'Dori received: {message}'}), 200
+
 @routes.route('/')
 def index():
     conn = get_db_connection()
