@@ -152,3 +152,113 @@ def download_rates():
         )
     except Exception:
         return {"error": "Failed to generate rates file"}, 500
+    
+
+######GET BILL#####
+@app.route('/bills/<provider_id>/')
+def totalbill(provider_id):
+    # 1) Parse & validate time‐window
+    t1_raw = request.args.get('from', '')
+    t2_raw = request.args.get('to', '')
+    now = datetime.now()
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    def parse_ts(ts, default):
+        try:
+            return datetime.strptime(ts, "%Y%m%d%H%M%S")
+        except:
+            return default
+
+    t1 = parse_ts(t1_raw, start_of_month)
+    t2 = parse_ts(t2_raw, now)
+
+    # 2) Fetch provider name
+    conn   = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM Provider WHERE id=%s", (provider_id,))
+    row = cursor.fetchone()
+    if not row:
+        cursor.close(); conn.close()
+        return jsonify({"error": f"Provider {provider_id} not found"}), 404
+    provider_name = row[0]
+    cursor.close(); conn.close()
+
+    # 3) Fetch truck IDs
+    conn   = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM Trucks WHERE provider_id=%s", (provider_id,))
+    trucks = [r[0] for r in cursor.fetchall()]
+    cursor.close(); conn.close()
+
+    # 4) Call Weight service
+    payload = {
+        "from":   t1.strftime("%Y%m%d%H%M%S"),
+        "to":     t2.strftime("%Y%m%d%H%M%S"),
+        "filter": "out"
+    }
+    product_summary = {}
+    session_count  = 0
+
+    for truck_id in trucks:
+        res = requests.get("http://weight-app:5000/weight", params={**payload, "truck": truck_id})
+        if res.status_code != 200:
+            continue
+        for rec in res.json():
+            if rec.get("direction") != "out":
+                continue
+            session_count += 1
+            prod = rec["produce"]
+            neto = int(rec["neto"] or 0)
+            if prod not in product_summary:
+                product_summary[prod] = {"product": prod, "count": 0, "amount": 0}
+            product_summary[prod]["count"]  += 1
+            product_summary[prod]["amount"] += neto
+
+    # 5) Look up rates and compute pay
+    conn   = get_db_connection()
+    cursor = conn.cursor()
+    total_pay = 0
+    products  = []
+
+    for prod, data in product_summary.items():
+        # scoped rate
+        cursor.execute(
+            "SELECT rate FROM Rates WHERE scope=%s AND product_id=%s",
+            (provider_id, prod)
+        )
+        row = cursor.fetchone()
+        if row:
+            rate = row[0]
+        else:
+            cursor.execute(
+                "SELECT rate FROM Rates WHERE scope='ALL' AND product_id=%s",
+                (prod,)
+            )
+            row = cursor.fetchone()
+            rate = row[0] if row else 0
+
+        pay = data["amount"] * rate
+        total_pay += pay
+
+        products.append({
+            "product": prod,
+            "count":   data["count"],
+            "amount":  data["amount"],
+            "rate":    rate,
+            "pay":     pay
+        })
+
+    cursor.close(); conn.close()
+
+    # 6) Build and return the bill JSON
+    bill = {
+        "id":           provider_id,
+        "name":         provider_name,
+        "from":         t1.strftime("%Y%m%d%H%M%S"),
+        "to":           t2.strftime("%Y%m%d%H%M%S"),
+        "truckCount":   len(trucks),
+        "sessionCount": session_count,
+        "products":     products,
+        "total":        total_pay
+    }
+    return jsonify(bill), 200
