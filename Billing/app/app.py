@@ -1,7 +1,7 @@
 import logging
 import os
 from flask import Flask
-from routes import routes
+from routes import routes, api, ui
 
 app = Flask(__name__)
 app.register_blueprint(routes)

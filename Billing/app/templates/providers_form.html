@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}New Provider{% endblock %}
+{% block content %}
+  <h2>Create Provider</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input name="name" class="form-control" required>
+    </div>
+    <button class="btn btn-success">Create</button>
+  </form>
+{% endblock %}
