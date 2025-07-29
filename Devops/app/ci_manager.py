@@ -68,11 +68,12 @@ def run_ci_pipeline(payload):
             # pull the latest commit
             #git fetch origin devops_build_tests
             print(f"Pulling latest commit for branch: {branch}")
+            subprocess.run(f"git checkout {branch}", shell=True, check=True, capture_output=True, text=True)
+            print(f"Checked out branch: {branch}")
             pull_current_commit = subprocess.run(f"git pull origin {branch} --hard", shell=True, check=True, capture_output=True, text=True)
             if pull_current_commit.returncode != 0:
                 raise Exception(f"Failed to pull latest commit for branch: {branch}")
 
-            pull_current_commit = subprocess.run(f"git pull origin {branch} --hard", shell=True, check=True, capture_output=True, text=True)
 
 
 
