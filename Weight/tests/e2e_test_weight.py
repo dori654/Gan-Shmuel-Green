@@ -122,3 +122,46 @@ def test_weight_in_and_out_flow():
     assert isinstance(session_data["neto"], int)
 
     print("✅ Session details validated successfully.")
+
+
+    #       # === STEP 7: Check /item/<id>?from=...&to=... ===
+    # print("[STEP 7] Verifying /item/<id> for container and truck...")
+
+    # item_from = from_ts
+    # item_to = to_ts
+
+    # # --- Container Check ---
+    # container_item_response = requests.get(
+    #     f"{BASE_URL}/item/{container_id}?from={item_from}&to={item_to}"
+    # )
+    # print(f"Container {container_id} response:", container_item_response.json())
+    # assert container_item_response.status_code == 200
+
+    # container_data = container_item_response.json()
+    # assert container_data["id"] == container_id
+    # assert isinstance(container_data["tara"], (list, int, str)), f"Tara should be list/int/'na', got {type(container_data['tara'])}"
+    # assert isinstance(container_data["sessions"], list)
+    # assert len(container_data["sessions"]) > 0
+
+    # # --- Truck Check ---
+    # truck_item_response = requests.get(
+    #     f"{BASE_URL}/item/{truck_id}?from={item_from}&to={item_to}"
+    # )
+    # print(f"Truck {truck_id} response:", truck_item_response.json())
+    # assert truck_item_response.status_code == 200
+
+    # truck_data = truck_item_response.json()
+    # assert truck_data["id"] == truck_id
+    # assert isinstance(truck_data["tara"], (int, str)), f"Tara should be int/'na', got {type(truck_data['tara'])}"
+    # assert isinstance(truck_data["sessions"], list)
+    # assert len(truck_data["sessions"]) > 0
+
+    # # --- Non-existent Item Check ---
+    # unknown_id = "ID-DOES-NOT-EXIST"
+    # unknown_response = requests.get(
+    #     f"{BASE_URL}/item/{unknown_id}?from={item_from}&to={item_to}"
+    # )
+    # print(f"Unknown ID response:", unknown_response.status_code)
+    # assert unknown_response.status_code == 404
+
+    # print("✅ /item/<id> endpoint passed all checks.")

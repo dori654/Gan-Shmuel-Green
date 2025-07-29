@@ -356,4 +356,3 @@ def get_item(get_id):
                 "tara": tara if tara is not None else "na",
                 "sessions": session_id}
     return jsonify(response), 200
-
