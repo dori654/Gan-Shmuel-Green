@@ -16,7 +16,7 @@ services:
       - "3306:3306"
   app:
     build:
-      context: ./app
+      context: .
     container_name: weight-app
     ports:
       - "5000:5000"
