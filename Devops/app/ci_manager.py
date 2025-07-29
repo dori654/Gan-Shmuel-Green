@@ -142,10 +142,10 @@ def run_ci_pipeline(payload):
           run_cmd("Deploy prod", "docker compose -f docker-compose.prod.yaml up -d --build")
           notify_slack("🚢 Deployed to production")
 
-        return "CI complete"
+        return "CI complete!"
 
     except Exception as e:
         notify_slack(f"🔥 CI failed for `{branch}`: {str(e)}")
         return "CI failed"
 
-#mini change - build please ! !!!
+#mini change - build please ! !!!!
