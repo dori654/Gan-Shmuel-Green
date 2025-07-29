@@ -76,7 +76,8 @@ def run_ci_pipeline(payload):
             print(f"Pulling latest commit for branch: {branch}")
             sync_branch(branch)
 
-
+            #export environment variables
+            run_cmd("Export environment variables", "export $(cat .env | xargs)")
 
 
             #build weight image
@@ -105,7 +106,7 @@ def run_ci_pipeline(payload):
             #rollback to the latest stable commit
             run_cmd("Rollback to latest stable commit", f"git reset --hard {latest_stable_commit}")
             notify_slack(f"Rolled back to latest stable commit: `{latest_stable_commit}`")
-            build_latest_stable_result = run_cmd("Build latest stable image", "docker compose -f ./Devops/docker-compose.yaml up -d --build")
+            build_latest_stable_result = run_cmd("Build latest stable image", "docker compose -f ./Devops/docker-compose.yml up -d --build")
             if build_latest_stable_result.returncode != 0:
                 notify_slack("🔥 Failed to build latest stable image after rollback")
                 return "CI failed after rollback"
