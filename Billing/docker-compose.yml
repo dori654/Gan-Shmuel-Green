@@ -31,6 +31,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
     - ./app/in/rates.xlsx:/app/in/rates.xlsx
+    - ./logs:/app/logs
     networks:
       - backend
 
