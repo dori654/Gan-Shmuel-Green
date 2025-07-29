@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   db:
     image: mysql:8.0
@@ -23,19 +25,40 @@ services:
     depends_on:
       - db
     ports:
-      - "8081:5000"
+      - "5000:5000"
     environment:
       DB_HOST: db
       DB_NAME: ${MYSQL_DATABASE}
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-    - ./app/in/rates.xlsx:/app/in/rates.xlsx
-    - ./logs:/app/logs
+      - ./app/in/rates.xlsx:/app/in/rates.xlsx
+      - ./app:/app
+      - ./logs:/app/logs
     networks:
       - backend
 
-networks:
+  test:
+    build:
+      context: ./app
+    container_name: flask-test
+    depends_on:
+      - db
+    environment:
+      PYTHONPATH: /app
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    command: pytest
+    networks:
+      - backend
+
+networks: 
   backend:
+
 volumes:
   mysql_data:
