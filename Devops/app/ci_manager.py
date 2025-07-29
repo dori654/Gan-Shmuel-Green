@@ -45,6 +45,7 @@ def get_latest_stable_commit():
         return '3a3aab312c5837e57a1a21ca8e219ae82c0a28d9'  # Fallback to a known commit hash
     
 def sync_branch(branch):
+  try:
     subprocess.run(f"git fetch", shell=True, check=True)
     print("KOBI - git fetch")
     subprocess.run(f"git checkout {branch}", shell=True, check=True)
@@ -56,6 +57,8 @@ def sync_branch(branch):
     subprocess.run(f"git pull", shell=True, check=True)
     print(f"KOBI - git pull")
     print(f"{branch} is up to date")
+  except Exception as e:
+    print(f"Error syncing branch {branch}: {e}")
 
 def run_ci_pipeline(payload):
     # You can extract branch, repo, etc. from the payload here
