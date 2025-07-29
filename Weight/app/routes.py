@@ -351,3 +351,84 @@ def get_item(get_id):
                 "tara": tara if tara is not None else "na",
                 "sessions": session_id}
     return jsonify(response), 200
+
+@api.route("/containers", methods=["GET"], strict_slashes=False)
+def get_containers():
+    """Get all registered containers"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        cursor.execute("SELECT container_id, weight, unit FROM containers_registered ORDER BY container_id")
+        containers = cursor.fetchall()
+        
+        response = {
+            "containers": containers,
+            "count": len(containers)
+        }
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        print(f"Error fetching containers: {e}")
+        return jsonify({"error": "Failed to fetch containers"}), 500
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+@api.route("/history-items", methods=["GET"], strict_slashes=False)
+def get_history_items():
+    """Get unique trucks and containers from transaction history"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Get unique trucks from transactions
+        cursor.execute("SELECT DISTINCT truck FROM transactions WHERE truck IS NOT NULL AND truck != '' ORDER BY truck")
+        trucks = [row['truck'] for row in cursor.fetchall()]
+        
+        # Get unique containers from transactions
+        cursor.execute("SELECT DISTINCT containers FROM transactions WHERE containers IS NOT NULL AND containers != '' ORDER BY containers")
+        container_rows = cursor.fetchall()
+        
+        # Parse containers (they might be comma-separated)
+        containers_set = set()
+        for row in container_rows:
+            if row['containers']:
+                # Split by comma and clean up
+                container_list = [c.strip() for c in row['containers'].split(',') if c.strip()]
+                containers_set.update(container_list)
+        
+        containers = sorted(list(containers_set))
+        
+        response = {
+            "trucks": trucks,
+            "containers": containers,
+            "trucks_count": len(trucks),
+            "containers_count": len(containers)
+        }
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        print(f"Error fetching history items: {e}")
+        return jsonify({"error": "Failed to fetch history items"}), 500
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+
+# Get trucks from trucks.json file
+@api.route('/trucks', methods=['GET'])
+def get_trucks():
+    try:
+        trucks_path = os.path.join(os.path.dirname(__file__), 'in', 'trucks.json')
+        with open(trucks_path, 'r') as f:
+            trucks_data = json.load(f)
+        return jsonify(trucks_data), 200
+    except FileNotFoundError:
+        return jsonify({'error': 'Trucks file not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error reading trucks file: {str(e)}'}), 500
