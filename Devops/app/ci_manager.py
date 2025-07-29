@@ -96,7 +96,7 @@ def run_ci_pipeline(payload):
             #build weight image
             os.chdir("/builder/Weight")
             print("Building weight image")
-            build_weight_result = run_cmd("Build weight image", "docker compose up -d --build")
+            build_weight_result = run_cmd("Build weight image", 'docker compose run --rm app sh -c "ls -R /app"')
             if build_weight_result.returncode != 0:
                 raise Exception("Failed to build weight image")
             
