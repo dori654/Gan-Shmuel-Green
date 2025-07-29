@@ -13,4 +13,4 @@ COPY --from=builder /install /usr/local
 # Copy your application code (app folder) into the image
 COPY app ./app
 EXPOSE 5000
-ENTRYPOINT ["python", "-m", "app.app.main"]
+ENTRYPOINT ["python", "-m", "main"]

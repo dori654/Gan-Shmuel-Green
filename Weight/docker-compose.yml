@@ -1,37 +1,47 @@
 services:
-  db:
-    image: mysql:8.0
+  web_weight:
+    container_name: weight-app
+    build:
+      context: ./app/
+    ports:
+      - "8082:5000"
+    depends_on:
+      db_weight:
+        condition: service_healthy
+    environment:
+      DB_HOST: db_weight
+      DB_PORT: 3306
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    volumes:
+      - ./app:/app/app  # Optional: hot-reload if desired
+    command: ["python", "-m", "app.main.py"]
+    networks:
+      - prod_network
+
+  db_weight:
     container_name: weight-db
-    restart: always
+    image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      TZ: Asia/Jerusalem
     volumes:
-      - db_data:/var/lib/mysql
+      - gsdata:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
-    ports:
-      - "3306:3306"
-  app:
-    build:
-      context: .
-    container_name: weight-app
-    ports:
-      - "5000:5000"
-    depends_on:
-      - db
-    environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      TZ: Asia/Jerusalem
-    volumes:
-      - ./app:/app/app  # Mount just your app code for hot-reload (optional)
-      - ./tests:/app/tests
-    command: ["python", "-m", "app.main"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prod_network
+
+networks:
+  prod_network:
+    external: true
+
 volumes:
-  db_data:
+  gsdata:
