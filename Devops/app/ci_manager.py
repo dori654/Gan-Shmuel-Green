@@ -58,8 +58,8 @@ def run_ci_pipeline(payload):
     commit_message = payload.get('head_commit', {}).get('message', 'unknown')
     pusher_name = payload.get('pusher', {}).get('name', 'unknown')
 
-    os.chdir("/Gan-Shmuel-Green")
-    run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /Gan-Shmuel-Green")
+    run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /builder")
+    os.chdir("/builder")
 
 
     commit_hash = payload.get('head_commit', {}).get('id', 'unknown')
@@ -67,7 +67,6 @@ def run_ci_pipeline(payload):
     print(f"Running CI for branch: {branch}, pusher: {pusher_name}, commit: {commit_message}")
     try:
         notify_slack(f"CI Started for branch: `{branch}` by `{pusher_name}`. Commit: `{commit_message}`")
-
 
         if branch == "devops_build_tests":
           latest_stable_commit = get_latest_stable_commit()
@@ -77,7 +76,6 @@ def run_ci_pipeline(payload):
             #git fetch origin devops_build_tests
             print(f"Pulling latest commit for branch: {branch}")
             sync_branch(branch)
-            time.sleep(10)  # wait for the branch to sync
 
             #export environment variables
             run_cmd("Export environment variables", "export $(cat .env | xargs)")
