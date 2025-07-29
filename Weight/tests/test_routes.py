@@ -78,8 +78,9 @@ def test_post_weight_in(client, setup_container):
 
     assert response.status_code == 201
     resp_json = response.get_json()
-    assert "Truck IN recorded" in resp_json.get("message", "")
     assert resp_json.get("bruto") == 1000
+    assert resp_json.get("truck") == "truck123"
+    assert "id" in resp_json
 
 
 def test_post_weight_out(client):
@@ -222,5 +223,67 @@ def test_get_weight(client):
         assert "produce" in row  
         assert isinstance(row["containers"], list)  
         assert row["neto"] == "na" or isinstance(row["neto"], int)
+    
+def insert_test_data_for_item():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Clean existing test data if any
+    cursor.execute("DELETE FROM transactions WHERE truck = 'truck123' OR containers = 'cont1'")
+    cursor.execute("DELETE FROM containers_registered WHERE container_id = 'cont1'")
+    conn.commit()
 
+    # Insert a container registration for cont1
+    cursor.execute(
+        "INSERT INTO containers_registered (container_id, weight) VALUES (%s, %s)",
+        ('cont1', 1200))
+
+    # Insert a truck IN transaction
+    now = datetime.now()
+    cursor.execute(
+        """
+        INSERT INTO transactions (datetime, direction, truck, containers, bruto, truckTara, produce)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (now - timedelta(minutes=30), 'in', 'truck123', 'cont1', 4000, 1800, 'potatoes'))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def test_get_item_truck(client):
+    insert_test_data_for_item()
+    now = datetime.now()
+    from_ts = (now - timedelta(hours=1)).strftime("%Y%m%d%H%M%S")
+    to_ts = now.strftime("%Y%m%d%H%M%S")
+
+    response = client.get(f"/item/truck123?from={from_ts}&to={to_ts}")
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data["id"] == "truck123"
+    assert isinstance(data["tara"], int)
+    assert isinstance(data["sessions"], list)
+    assert len(data["sessions"]) > 0
+
+def test_get_item_container(client):
+    insert_test_data_for_item()
+    now = datetime.now()
+    from_ts = (now - timedelta(hours=1)).strftime("%Y%m%d%H%M%S")
+    to_ts = now.strftime("%Y%m%d%H%M%S")
+
+    response = client.get(f"/item/cont1?from={from_ts}&to={to_ts}")
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert data["id"] == "cont1"
+    assert isinstance(data["tara"], list)
+    assert isinstance(data["sessions"], list)
+    assert len(data["tara"]) > 0
+
+def test_get_item_not_found(client):
+    now = datetime.now()
+    from_ts = (now - timedelta(hours=1)).strftime("%Y%m%d%H%M%S")
+    to_ts = now.strftime("%Y%m%d%H%M%S")
+    response = client.get(f"/item/notexist999?from={from_ts}&to={to_ts}")
+    assert response.status_code == 404
 
