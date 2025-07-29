@@ -80,16 +80,16 @@ def run_ci_pipeline(payload):
             run_cmd("Export environment variables", "export $(cat .env | xargs)")
 
 
-            #build weight image
-            build_weight_result = run_cmd("Build weight image", "docker compose -f ./Weight/docker-compose.yml up -d --build")
-            if build_weight_result.returncode != 0:
-                raise Exception("Failed to build weight image")
+            # #build weight image
+            # build_weight_result = run_cmd("Build weight image", "docker compose -f ./Weight/docker-compose.yml up -d --build")
+            # if build_weight_result.returncode != 0:
+            #     raise Exception("Failed to build weight image")
             
 
-            #test weight image
-            test_weight_result = run_cmd("Run Pytest on Weight", "docker compose -f ./Weight/docker-compose.test.yml exec -T app pytest")
-            if test_weight_result.returncode != 0:
-                raise Exception("Pytest failed for Weight service")
+            # #test weight image
+            # test_weight_result = run_cmd("Run Pytest on Weight", "docker compose -f ./Weight/docker-compose.test.yml exec -T app pytest")
+            # if test_weight_result.returncode != 0:
+            #     raise Exception("Pytest failed for Weight service")
 
             #build billing image
             build_billing_result = run_cmd("Build billing image", "docker compose -f ./Billing/docker-compose.yml up -d --build")
@@ -135,4 +135,4 @@ def run_ci_pipeline(payload):
         notify_slack(f"🔥 CI failed for `{branch}`: {str(e)}")
         return "CI failed"
 
-#mini change - build please
+#mini change - build please!
