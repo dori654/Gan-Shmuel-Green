@@ -116,14 +116,14 @@ def run_ci_pipeline(payload):
           except Exception as e:
             notify_slack(f"🔥 CI failed for `{branch}`: {str(e)}")
             #rollback to the latest stable commit
-            run_cmd("Rollback to latest stable commit", f"git reset --hard {latest_stable_commit}")
-            notify_slack(f"Rolled back to latest stable commit: `{latest_stable_commit}`")
-            build_latest_stable_result = run_cmd("Build latest stable image", "docker compose -f ./Devops/docker-compose.yml up -d --build")
-            if build_latest_stable_result.returncode != 0:
-                notify_slack("🔥 Failed to build latest stable image after rollback")
-                return "CI failed after rollback"
-            notify_slack(f"✅ Rolled back and built latest stable image: `{latest_stable_commit}`")
-            return "CI failed after rollback"
+            # run_cmd("Rollback to latest stable commit", f"git reset --hard {latest_stable_commit}")
+            # notify_slack(f"Rolled back to latest stable commit: `{latest_stable_commit}`")
+            # build_latest_stable_result = run_cmd("Build latest stable image", "docker compose -f ./Devops/docker-compose.yml up -d --build")
+            # if build_latest_stable_result.returncode != 0:
+                # notify_slack("🔥 Failed to build latest stable image after rollback")
+                # return "CI failed after rollback"
+            # notify_slack(f"✅ Rolled back and built latest stable image: `{latest_stable_commit}`")
+            # return "CI failed after rollback"
           
             
 
@@ -147,4 +147,4 @@ def run_ci_pipeline(payload):
         notify_slack(f"🔥 CI failed for `{branch}`: {str(e)}")
         return "CI failed"
 
-#mini change - build please !
+#mini change - build please ! 
