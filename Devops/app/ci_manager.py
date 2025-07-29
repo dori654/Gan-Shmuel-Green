@@ -22,6 +22,7 @@ def run_cmd(desc, cmd):
         notify_slack(f"Failed: {desc}")
         raise Exception(f"Step failed: {desc}")
     print(f"Done: {desc}")
+    return result
 
 def health_check(url):
     for i in range(5):
@@ -93,23 +94,23 @@ def run_ci_pipeline(payload):
 
 
             #build weight image
-            build_weight_result = run_cmd("Build weight image", "docker compose -f ./Weight/docker-compose.yml up -d --build")
+            build_weight_result = run_cmd("Build weight image", "docker compose -f ../Weight/docker-compose.yml up -d --build")
             if build_weight_result.returncode != 0:
                 raise Exception("Failed to build weight image")
             
 
             #test weight image
-            test_weight_result = run_cmd("Run Pytest on Weight", "docker compose -f ./Weight/docker-compose.test.yml exec -T app pytest")
+            test_weight_result = run_cmd("Run Pytest on Weight", "docker compose -f ../Weight/docker-compose.test.yml exec -T app pytest")
             if test_weight_result.returncode != 0:
                 raise Exception("Pytest failed for Weight service")
 
             #build billing image
-            build_billing_result = run_cmd("Build billing image", "docker compose -f ./Billing/docker-compose.yml up -d --build")
+            build_billing_result = run_cmd("Build billing image", "docker compose -f ../Billing/docker-compose.yml up -d --build")
             if build_billing_result.returncode != 0:
                 raise Exception("Failed to build billing image")
 
             #test billing image
-            test_billing_result = run_cmd("Run Pytest on Billing", "docker compose -f ./Billing/docker-compose.test.yml exec -T app pytest")
+            test_billing_result = run_cmd("Run Pytest on Billing", "docker compose -f ../Billing/docker-compose.test.yml exec -T app pytest")
             if test_billing_result.returncode != 0:
                 raise Exception("Pytest failed for Billing service")
 
