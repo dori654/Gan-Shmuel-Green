@@ -328,23 +328,18 @@ def get_item(get_id):
 
     # If it's not a truck id then fetch container weight from "containers_registered" table
     else:
-        cursor.execute("""
-            SELECT weight FROM containers_registered WHERE container_id LIKE %s
-            """, (f"%{get_id}%"))
+    # Check containers_registered table
+        cursor.execute("""SELECT weight FROM containers_registered WHERE container_id LIKE %s
+                        """, (f"%{get_id}%",))  
         container_results = cursor.fetchall()
 
         if container_results:
-            tara = [row["weight"] for row in container_results] # List Comprehension (result=list)
-            
-            # Now fetch session id from "transactions" table 
-            cursor.execute("""
-            SELECT id FROM transactions 
-            WHERE datetime BETWEEN %s AND %s AND containers = %s
-            """, (from_time, to_time, get_id))
+            tara = [row["weight"] for row in container_results]
+         # Now fetch session id from "transactions" table 
+            cursor.execute(""" SELECT id FROM transactions WHERE datetime BETWEEN %s AND %s AND containers = %s
+         """, (from_time, to_time, get_id))
             session_result = cursor.fetchall()
-            session_id = [row["id"] for row in session_result] # List Comprehension (result=list)
-
-        # If no results found in both tables
+            session_id = [row["id"] for row in session_result]
         else:
             return jsonify({"error": "Item not found"}), 404
 
