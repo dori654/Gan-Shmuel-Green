@@ -39,6 +39,14 @@ def get_new_feature_demo():
         'description': 'API for managing truck weights and transactions'
     })
 
+@api.route('/new-feature-demo-carmit', methods=['GET'])
+def get_new_feature_demo_carmit():
+    return jsonify({
+        'kobi': 'this is a new feature demo carmit',
+        'version': '1.0.0',
+        'description': 'API for managing truck weights and transactions'
+    })
+
 @api.route('/weight', methods=['POST'])
 def post_weight():
     data = request.get_json()
