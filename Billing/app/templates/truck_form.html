@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}New Truck{% endblock %}
+{% block content %}
+  <h2>Register Truck</h2>
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Truck Plate</label>
+      <input name="truck_id" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Provider</label>
+      <select name="provider_id" class="form-select" required>
+        <option value="">Choose…</option>
+        {% for id,name in providers %}
+        <option value="{{ id }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-success">Register</button>
+  </form>
+{% endblock %}
