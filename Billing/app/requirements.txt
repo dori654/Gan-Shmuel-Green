@@ -1,0 +1,6 @@
+flask
+pandas
+openpyxl
+pytest
+requests
+mysql-connector-python

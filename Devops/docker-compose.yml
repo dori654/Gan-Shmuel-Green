@@ -1,1 +1,19 @@
-version: '3.8'
+services:
+  ci:
+    container_name: my-ci
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /gan-shmuel-builds:/builds
+      - ~/logs:/logs
+    environment:
+      - SLACK_WEBHOOK_URL
+    ports:
+      - 8080:8080
+    networks:
+      - gan-shmuel
+
+networks:
+  gan-shmuel:
