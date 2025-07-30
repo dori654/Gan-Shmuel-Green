@@ -258,6 +258,14 @@ function showTab(tabName) {
         loadSessions();
     } else if (tabName === 'unknown') {
         loadUnknownTrucks();
+    } else if (tabName === 'control') {
+        // Initialize monitoring dashboard
+        setTimeout(() => {
+            initializeMonitoring();
+        }, 100); // Small delay to ensure DOM is ready
+    } else {
+        // Stop monitoring when leaving control tab
+        stopMonitoring();
     }
 }
 
@@ -1488,7 +1496,7 @@ function showToast(message, type = 'info') {
 }
 
 // Show exit weighing popup with tara and neto details
-function showExitWeighingPopup(result, truckId) {
+async function showExitWeighingPopup(result, truckId) {
     // Create popup overlay
     const overlay = document.createElement('div');
     overlay.className = 'popup-overlay';
@@ -1529,6 +1537,32 @@ function showExitWeighingPopup(result, truckId) {
     // Calculate bruto weight from scale display
     const brutoWeight = parseFloat(document.getElementById('currentWeight').textContent) || 0;
     
+    // Try to get bill information for the truck (mock provider ID)
+    let billInfo = '';
+    try {
+        // For demo, use a mock provider ID based on truck ID
+        const mockProviderId = truckId.includes('123') ? '123456789' : '987654321';
+        const billData = await getBillDataForTruck(truckId, mockProviderId);
+        
+        if (billData) {
+            const totalNIS = (billData.total / 100).toLocaleString('he-IL', {
+                style: 'currency',
+                currency: 'ILS'
+            });
+            
+            billInfo = `
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #28a745;">
+                    <h4 style="margin: 0 0 10px 0; color: #28a745;"><i class="fas fa-receipt"></i> פירוט חשבונית:</h4>
+                    <p style="margin: 5px 0;"><strong>ספק:</strong> ${billData.name}</p>
+                    <p style="margin: 5px 0;"><strong>מספר פעולות בתקופה:</strong> ${billData.sessionCount}</p>
+                    <p style="margin: 5px 0;"><strong>סכום כולל לתקופה:</strong> ${totalNIS}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error getting bill info:', error);
+    }
+    
     // Create popup HTML
     popup.innerHTML = `
         <div style="margin-bottom: 20px;">
@@ -1563,6 +1597,8 @@ function showExitWeighingPopup(result, truckId) {
             </div>
         </div>
         
+        ${billInfo}
+        
         <button onclick="this.closest('.popup-overlay').remove()" 
                 style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px;">
             <i class="fas fa-check"></i> אשר
@@ -1591,3 +1627,567 @@ function showExitWeighingPopup(result, truckId) {
 
 // Real weight calculation is now handled by getCurrentWeight() function
 // Called automatically when form inputs change
+
+// ============ RECEIPTS FUNCTIONALITY ============
+
+// Generate bill for provider
+async function generateBill() {
+    console.log('generateBill function called');
+    
+    const providerId = document.getElementById('providerId').value.trim();
+    const fromDate = document.getElementById('billFromDate').value;
+    const toDate = document.getElementById('billToDate').value;
+    
+    console.log('Provider ID:', providerId);
+    console.log('From Date:', fromDate);
+    console.log('To Date:', toDate);
+    
+    if (!providerId) {
+        showToast('אנא בחר ספק', 'warning');
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        
+        // Build query parameters
+        let queryParams = '';
+        if (fromDate || toDate) {
+            const params = new URLSearchParams();
+            if (fromDate) {
+                const from = new Date(fromDate).toISOString().replace(/[-:T]/g, '').substring(0, 14);
+                params.append('from', from);
+            }
+            if (toDate) {
+                const to = new Date(toDate).toISOString().replace(/[-:T]/g, '').substring(0, 14);
+                params.append('to', to);
+            }
+            queryParams = '?' + params.toString();
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/bill/${providerId}${queryParams}`);
+        if (!response.ok) {
+            throw new Error('שגיאה ביצירת הקבלה');
+        }
+        
+        const billData = await response.json();
+        displayBill(billData);
+        
+    } catch (error) {
+        console.error('Error generating bill:', error);
+        showToast(error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Display bill data in popup
+function displayBill(billData) {
+    // Format dates for display
+    const fromDate = formatDateTimeFromString(billData.from);
+    const toDate = formatDateTimeFromString(billData.to);
+    
+    // Format total amount (convert agorot to NIS)
+    const totalNIS = (billData.total / 100).toLocaleString('he-IL', {
+        style: 'currency',
+        currency: 'ILS'
+    });
+    
+    let productsHtml = '';
+    billData.products.forEach(product => {
+        const amountKg = product.amount.toLocaleString('he-IL');
+        const rateNIS = (product.rate / 100).toFixed(2);
+        const payNIS = (product.pay / 100).toLocaleString('he-IL', {
+            style: 'currency',
+            currency: 'ILS'
+        });
+        
+        productsHtml += `
+            <tr>
+                <td>${product.product}</td>
+                <td>${product.count}</td>
+                <td>${amountKg} ק"ג</td>
+                <td>₪${rateNIS}</td>
+                <td>${payNIS}</td>
+            </tr>
+        `;
+    });
+    
+    // Create popup overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        overflow-y: auto;
+        padding: 20px;
+    `;
+    
+    // Create popup content
+    const popup = document.createElement('div');
+    popup.className = 'popup-content receipt-popup';
+    popup.style.cssText = `
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        max-width: 800px;
+        width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        direction: rtl;
+        position: relative;
+    `;
+    
+    popup.innerHTML = `
+        <div class="bill-header">
+            <button onclick="this.closest('.popup-overlay').remove()" 
+                    style="position: absolute; top: 15px; left: 15px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; font-size: 16px;">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">
+                <i class="fas fa-file-invoice" style="color: #3498db; margin-left: 10px;"></i>
+                קבלה מספר ${billData.id}
+            </h2>
+            <div class="bill-info" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                <p style="margin: 8px 0; font-size: 16px;"><strong style="color: #2c3e50;">שם ספק:</strong> ${billData.name}</p>
+                <p style="margin: 8px 0; font-size: 16px;"><strong style="color: #2c3e50;">תקופה:</strong> ${fromDate} - ${toDate}</p>
+                <p style="margin: 8px 0; font-size: 16px;"><strong style="color: #2c3e50;">מספר משאיות:</strong> ${billData.truckCount}</p>
+                <p style="margin: 8px 0; font-size: 16px;"><strong style="color: #2c3e50;">מספר פעולות:</strong> ${billData.sessionCount}</p>
+            </div>
+        </div>
+        
+        <div class="bill-products">
+            <h3 style="color: #2c3e50; margin-bottom: 15px; font-size: 20px;">פירוט תוצרת:</h3>
+            <table class="bill-table" style="width: 100%; border-collapse: collapse; margin: 15px 0; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #3498db, #2980b9); color: white;">
+                        <th style="padding: 15px; text-align: right; font-weight: 600;">תוצרת</th>
+                        <th style="padding: 15px; text-align: right; font-weight: 600;">מספר פעולות</th>
+                        <th style="padding: 15px; text-align: right; font-weight: 600;">כמות כוללת</th>
+                        <th style="padding: 15px; text-align: right; font-weight: 600;">מחיר לק"ג</th>
+                        <th style="padding: 15px; text-align: right; font-weight: 600;">סכום</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${productsHtml.replace(/<td>/g, '<td style="padding: 12px; text-align: right; border-bottom: 1px solid #ecf0f1; font-size: 15px;">')}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="bill-total" style="text-align: center; margin: 25px 0; padding: 20px; background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; border-radius: 15px; box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);">
+            <h2 style="margin: 0; font-size: 24px; font-weight: 700;">סכום כולל: ${totalNIS}</h2>
+        </div>
+        
+        <div class="bill-actions" style="display: flex; justify-content: center; gap: 15px; margin-top: 25px;">
+            <button class="btn btn-success" onclick="printReceiptPopup()" style="padding: 12px 25px; font-size: 16px; border-radius: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-print"></i> הדפסה
+            </button>
+            <button class="btn btn-info" onclick="downloadBillPDF()" style="padding: 12px 25px; font-size: 16px; border-radius: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-download"></i> הורדה PDF
+            </button>
+            <button class="btn btn-secondary" onclick="this.closest('.popup-overlay').remove()" style="padding: 12px 25px; font-size: 16px; border-radius: 8px; transition: all 0.3s ease;">
+                <i class="fas fa-times"></i> סגור
+            </button>
+        </div>
+    `;
+    
+    overlay.appendChild(popup);
+    document.body.appendChild(overlay);
+    
+    // Close popup when clicking outside
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+    
+    // Close popup with Escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            overlay.remove();
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
+// Format datetime string for display
+function formatDateTimeFromString(dateTimeString) {
+    try {
+        // Parse yyyymmddhhmmss format
+        const year = dateTimeString.substring(0, 4);
+        const month = dateTimeString.substring(4, 6);
+        const day = dateTimeString.substring(6, 8);
+        const hour = dateTimeString.substring(8, 10);
+        const minute = dateTimeString.substring(10, 12);
+        const second = dateTimeString.substring(12, 14);
+        
+        const date = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
+        return date.toLocaleString('he-IL');
+    } catch (error) {
+        return dateTimeString;
+    }
+}
+
+// Print bill from popup
+function printReceiptPopup() {
+    const popup = document.querySelector('.receipt-popup');
+    if (!popup) {
+        showToast('לא נמצאה קבלה להדפסה', 'error');
+        return;
+    }
+    
+    const billContent = popup.innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>קבלה</title>
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        direction: rtl; 
+                        margin: 20px;
+                        color: #333;
+                    }
+                    .bill-table { 
+                        width: 100%; 
+                        border-collapse: collapse; 
+                        margin: 20px 0; 
+                    }
+                    .bill-table th, .bill-table td { 
+                        border: 1px solid #ddd; 
+                        padding: 12px; 
+                        text-align: right; 
+                    }
+                    .bill-table th { 
+                        background-color: #f2f2f2; 
+                        font-weight: bold;
+                    }
+                    .bill-total { 
+                        font-size: 20px; 
+                        font-weight: bold; 
+                        margin: 20px 0; 
+                        text-align: center;
+                        padding: 15px;
+                        background: #f8f9fa;
+                        border-radius: 8px;
+                    }
+                    .bill-actions, button { 
+                        display: none !important; 
+                    }
+                    .bill-header h2 {
+                        text-align: center;
+                        color: #2c3e50;
+                        margin-bottom: 20px;
+                    }
+                    .bill-info {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 15px;
+                        margin-bottom: 25px;
+                        padding: 15px;
+                        background: #f8f9fa;
+                        border-radius: 8px;
+                    }
+                </style>
+            </head>
+            <body>
+                ${billContent}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+// Print bill (legacy function for compatibility)
+function printBill() {
+    printReceiptPopup();
+}
+
+// Download bill as PDF (mock function)
+function downloadBillPDF() {
+    showToast('פונקציית הורדת PDF תופעל בעתיד', 'info');
+}
+
+// Get bill data for exit popup (used when truck exits)
+async function getBillDataForTruck(truckId, providerId) {
+    try {
+        if (!providerId) return null;
+        
+        const response = await fetch(`${API_BASE_URL}/bill/${providerId}`);
+        if (!response.ok) return null;
+        
+        const billData = await response.json();
+        return billData;
+    } catch (error) {
+        console.error('Error getting bill data:', error);
+        return null;
+    }
+}
+
+// Make functions globally accessible
+window.generateBill = generateBill;
+window.printBill = printBill;
+window.printReceiptPopup = printReceiptPopup;
+window.downloadBillPDF = downloadBillPDF;
+
+// Monitoring Dashboard Functions
+// Use backend proxy instead of direct external requests
+const HEALTH_SERVICES = ['devops', 'billing', 'weight'];
+
+let monitoringInterval;
+let activityLog = [];
+
+// Initialize monitoring when control tab is shown
+function initializeMonitoring() {
+    console.log('Initializing monitoring dashboard...');
+    updateMetrics();
+    runAllHealthChecks();
+    
+    // Start periodic health checks every 30 seconds
+    if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+    }
+    monitoringInterval = setInterval(() => {
+        runAllHealthChecks();
+        updateMetrics();
+    }, 30000);
+    
+    addActivityLogEntry('info', 'מערכת הניטור הופעלה');
+}
+
+// Stop monitoring when leaving control tab
+function stopMonitoring() {
+    if (monitoringInterval) {
+        clearInterval(monitoringInterval);
+        monitoringInterval = null;
+    }
+}
+
+// Run all health checks
+async function runAllHealthChecks() {
+    console.log('Running all health checks...');
+    const promises = HEALTH_SERVICES.map(service => checkHealth(service));
+    await Promise.all(promises);
+    addActivityLogEntry('info', 'בדיקת תקינות כללית הושלמה');
+}
+
+// Check health of a specific service using backend proxy
+async function checkHealth(service) {
+    const statusCard = document.getElementById(`${service}-status`);
+    const healthItem = document.getElementById(`health-${service}`);
+    
+    if (!statusCard || !healthItem) {
+        console.error(`Elements not found for service: ${service}`);
+        return;
+    }
+    
+    const statusBadge = statusCard.querySelector('.status-badge');
+    const statusText = statusCard.querySelector('.status-text');
+    const healthBadge = healthItem.querySelector('.health-badge');
+    
+    // Set checking state
+    statusBadge.className = 'status-badge checking';
+    statusBadge.textContent = 'בודק';
+    statusText.textContent = 'בודק...';
+    healthBadge.className = 'health-badge checking';
+    healthBadge.textContent = 'בודק...';
+    
+    try {
+        const startTime = Date.now();
+        
+        // Use backend proxy endpoint
+        const response = await fetch(`${API_BASE_URL}/health-check/${service}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const endTime = Date.now();
+        const requestTime = endTime - startTime;
+        
+        if (response.ok) {
+            const healthData = await response.json();
+            const isHealthy = healthData.status === 'healthy';
+            const responseTime = healthData.response_time_ms || requestTime;
+            
+            if (isHealthy) {
+                // Healthy
+                statusCard.className = 'status-card healthy';
+                statusBadge.className = 'status-badge healthy';
+                statusBadge.textContent = 'תקין';
+                statusText.textContent = `תגובה: ${responseTime}ms`;
+                healthBadge.className = 'health-badge healthy';
+                healthBadge.textContent = 'תקין';
+                
+                const contentPreview = typeof healthData.content === 'string' 
+                    ? healthData.content.substring(0, 30) + '...'
+                    : JSON.stringify(healthData.content).substring(0, 30) + '...';
+                
+                addActivityLogEntry('success', `${getServiceName(service)} - תקין (${responseTime}ms) - ${contentPreview}`);
+            } else {
+                // Unhealthy but got response
+                statusCard.className = 'status-card warning';
+                statusBadge.className = 'status-badge warning';
+                statusBadge.textContent = 'בעיה';
+                statusText.textContent = `סטטוס: ${healthData.status}`;
+                healthBadge.className = 'health-badge warning';
+                healthBadge.textContent = 'בעיה';
+                
+                addActivityLogEntry('warning', `${getServiceName(service)} - ${healthData.status} - ${healthData.message || 'Unknown issue'}`);
+            }
+        } else {
+            // HTTP error from our backend
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            
+            statusCard.className = 'status-card unhealthy';
+            statusBadge.className = 'status-badge unhealthy';
+            statusBadge.textContent = 'שגיאה';
+            statusText.textContent = `שגיאה: ${response.status}`;
+            healthBadge.className = 'health-badge unhealthy';
+            healthBadge.textContent = 'שגיאה';
+            
+            addActivityLogEntry('error', `${getServiceName(service)} - שגיאה ${response.status} - ${errorData.message}`);
+        }
+    } catch (error) {
+        // Network or other error
+        statusCard.className = 'status-card unhealthy';
+        statusBadge.className = 'status-badge unhealthy';
+        statusBadge.textContent = 'לא זמין';
+        statusText.textContent = 'אין חיבור';
+        healthBadge.className = 'health-badge unhealthy';
+        healthBadge.textContent = 'לא זמין';
+        
+        console.error(`Health check failed for ${service}:`, error);
+        addActivityLogEntry('error', `${getServiceName(service)} - אין חיבור למערכת`);
+    }
+}
+
+// Get service display name in Hebrew
+function getServiceName(service) {
+    const names = {
+        devops: 'DevOps',
+        billing: 'שירות חיוב',
+        weight: 'שירות שקילה'
+    };
+    return names[service] || service;
+}
+
+// Update metrics with mock data
+function updateMetrics() {
+    // Generate realistic mock data
+    const trucksToday = Math.floor(Math.random() * 50) + 20;
+    const totalWeight = (Math.random() * 500 + 200).toFixed(1);
+    const avgResponse = Math.floor(Math.random() * 200) + 50;
+    const systemUptime = (Math.random() * 5 + 95).toFixed(1);
+    
+    // Update metric values
+    const trucksElement = document.getElementById('trucks-today');
+    const weightElement = document.getElementById('total-weight');
+    const responseElement = document.getElementById('avg-response');
+    const uptimeElement = document.getElementById('system-uptime');
+    
+    if (trucksElement) trucksElement.textContent = trucksToday;
+    if (weightElement) weightElement.textContent = totalWeight;
+    if (responseElement) responseElement.textContent = `${avgResponse}ms`;
+    if (uptimeElement) uptimeElement.textContent = `${systemUptime}%`;
+    
+    // Update change indicators with mock data
+    const trucksChange = document.getElementById('trucks-change');
+    const weightChange = document.getElementById('weight-change');
+    const responseChange = document.getElementById('response-change');
+    const uptimeChange = document.getElementById('uptime-change');
+    
+    if (trucksChange) {
+        const change = (Math.random() * 20 - 10).toFixed(1);
+        trucksChange.textContent = `${change > 0 ? '+' : ''}${change}% מאתמול`;
+        trucksChange.className = `metric-change ${change >= 0 ? 'positive' : 'negative'}`;
+    }
+    
+    if (weightChange) {
+        const change = (Math.random() * 15 - 5).toFixed(1);
+        weightChange.textContent = `${change > 0 ? '+' : ''}${change}% מאתמול`;
+        weightChange.className = `metric-change ${change >= 0 ? 'positive' : 'negative'}`;
+    }
+    
+    if (responseChange) {
+        const change = (Math.random() * 10 - 15).toFixed(1);
+        responseChange.textContent = `${change > 0 ? '+' : ''}${change}% מאתמול`;
+        responseChange.className = `metric-change ${change <= 0 ? 'positive' : 'negative'}`;
+    }
+    
+    if (uptimeChange) {
+        const change = (Math.random() * 2 - 1).toFixed(2);
+        uptimeChange.textContent = `${change > 0 ? '+' : ''}${change}% מאתמול`;
+        uptimeChange.className = `metric-change ${change >= 0 ? 'positive' : 'negative'}`;
+    }
+}
+
+// Add entry to activity log
+function addActivityLogEntry(type, message) {
+    const timestamp = new Date().toLocaleTimeString('he-IL');
+    const entry = { type, message, timestamp };
+    
+    activityLog.unshift(entry);
+    if (activityLog.length > 50) {
+        activityLog = activityLog.slice(0, 50); // Keep only last 50 entries
+    }
+    
+    updateActivityLogDisplay();
+}
+
+// Update activity log display
+function updateActivityLogDisplay() {
+    const logContent = document.getElementById('activity-log-content');
+    if (!logContent) return;
+    
+    if (activityLog.length === 0) {
+        logContent.innerHTML = '<p style="text-align: center; color: #6c757d; padding: 20px;">אין פעילות להצגה</p>';
+        return;
+    }
+    
+    const logHTML = activityLog.map(entry => {
+        const iconClass = {
+            success: 'fas fa-check-circle',
+            error: 'fas fa-exclamation-circle',
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle'
+        }[entry.type] || 'fas fa-info-circle';
+        
+        return `
+            <div class="activity-log-entry ${entry.type}">
+                <span class="activity-timestamp">${entry.timestamp}</span>
+                <i class="activity-icon ${entry.type} ${iconClass}"></i>
+                <span class="activity-message">${entry.message}</span>
+            </div>
+        `;
+    }).join('');
+    
+    logContent.innerHTML = logHTML;
+}
+
+// Clear activity log
+function clearActivityLog() {
+    activityLog = [];
+    updateActivityLogDisplay();
+    addActivityLogEntry('info', 'יומן הפעילות נוקה');
+}
+
+// Make monitoring functions globally accessible
+window.runAllHealthChecks = runAllHealthChecks;
+window.checkHealth = checkHealth;
+window.clearActivityLog = clearActivityLog;
+window.initializeMonitoring = initializeMonitoring;
+window.stopMonitoring = stopMonitoring;

@@ -432,3 +432,193 @@ def get_trucks():
         return jsonify({'error': 'Trucks file not found'}), 404
     except Exception as e:
         return jsonify({'error': f'Error reading trucks file: {str(e)}'}), 500
+
+
+# Mock bill endpoint - GET /bill/<id>?from=t1&to=t2
+@api.route('/bill/<provider_id>', methods=['GET'])
+def get_bill(provider_id):
+    try:
+        # Get query parameters
+        from_param = request.args.get('from')
+        to_param = request.args.get('to')
+        
+        # Parse datetime parameters or use defaults
+        from datetime import datetime
+        import calendar
+        
+        now = datetime.now()
+        
+        # Default from: 1st of current month at 00:00:00
+        if from_param:
+            try:
+                from_time = datetime.strptime(from_param, '%Y%m%d%H%M%S')
+            except:
+                from_time = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            from_time = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        # Default to: now
+        if to_param:
+            try:
+                to_time = datetime.strptime(to_param, '%Y%m%d%H%M%S')
+            except:
+                to_time = now
+        else:
+            to_time = now
+        
+        # Mock provider names
+        provider_names = {
+            '123456789': 'חקלאות דן - משק אבוקדו',
+            '987654321': 'כרמל פירות - ייצוא הדרים',
+            '555666777': 'עמק יזרעאל - גידולי שדה',
+            '111222333': 'גליל עליון - פרדסים',
+            '444555666': 'שרון חקלאות - ירקות ופירות'
+        }
+        
+        provider_name = provider_names.get(provider_id, f'ספק {provider_id}')
+        
+        # Mock realistic bill data
+        mock_products = [
+            {
+                'product': 'אבוקדו',
+                'count': '12',
+                'amount': 8450,
+                'rate': 850,  # 8.50 NIS per kg in agorot
+                'pay': 7182500  # 71,825 NIS in agorot
+            },
+            {
+                'product': 'תפוזים',
+                'count': '8',
+                'amount': 6200,
+                'rate': 320,  # 3.20 NIS per kg in agorot
+                'pay': 1984000  # 19,840 NIS in agorot
+            },
+            {
+                'product': 'לימונים',
+                'count': '5',
+                'amount': 3100,
+                'rate': 450,  # 4.50 NIS per kg in agorot
+                'pay': 1395000  # 13,950 NIS in agorot
+            }
+        ]
+        
+        # Calculate totals
+        total_sessions = sum(int(p['count']) for p in mock_products)
+        total_pay = sum(p['pay'] for p in mock_products)
+        
+        # Create mock bill response
+        bill_data = {
+            'id': provider_id,
+            'name': provider_name,
+            'from': from_time.strftime('%Y%m%d%H%M%S'),
+            'to': to_time.strftime('%Y%m%d%H%M%S'),
+            'truckCount': 15,  # Mock truck count
+            'sessionCount': total_sessions,
+            'products': mock_products,
+            'total': total_pay
+        }
+        
+        return jsonify(bill_data)
+        
+    except Exception as e:
+        return jsonify({'error': f'Error generating bill: {str(e)}'}), 500
+
+@api.route('/health-check/<service>', methods=['GET'])
+def health_check_service(service):
+    """Proxy health checks to external services"""
+    import requests
+    from datetime import datetime
+    
+    # Define service endpoints
+    service_endpoints = {
+        'devops': 'http://13.126.238.4:8080/health',
+        'billing': 'http://13.126.238.4:8081/health', 
+        'weight': 'http://13.126.238.4:8082/health'
+    }
+    
+    if service not in service_endpoints:
+        return jsonify({
+            'status': 'error',
+            'message': f'Unknown service: {service}',
+            'timestamp': datetime.now().isoformat()
+        }), 400
+    
+    try:
+        start_time = datetime.now()
+        
+        # Make request to external service with timeout
+        response = requests.get(
+            service_endpoints[service],
+            timeout=5,
+            headers={'Accept': 'application/json, text/plain, */*'}
+        )
+        
+        end_time = datetime.now()
+        response_time = int((end_time - start_time).total_seconds() * 1000)
+        
+        # Parse response content
+        content_type = response.headers.get('content-type', '').lower()
+        is_healthy = False
+        response_content = None
+        
+        try:
+            if 'application/json' in content_type:
+                response_content = response.json()
+                # Check for various "ok" indicators in JSON
+                if isinstance(response_content, dict):
+                    status_fields = ['status', 'health', 'state', 'ok']
+                    for field in status_fields:
+                        if field in response_content:
+                            value = response_content[field]
+                            if (isinstance(value, bool) and value) or \
+                               (isinstance(value, str) and 'ok' in value.lower()):
+                                is_healthy = True
+                                break
+                elif isinstance(response_content, str) and 'ok' in response_content.lower():
+                    is_healthy = True
+            else:
+                response_content = response.text
+                if 'ok' in response_content.lower():
+                    is_healthy = True
+        except:
+            response_content = response.text
+            if 'ok' in response_content.lower():
+                is_healthy = True
+        
+        # If no "ok" found but HTTP status is good, consider it healthy
+        if not is_healthy and response.status_code == 200:
+            is_healthy = True
+        
+        return jsonify({
+            'status': 'healthy' if is_healthy else 'unhealthy',
+            'http_status': response.status_code,
+            'response_time_ms': response_time,
+            'content': response_content,
+            'content_type': content_type,
+            'timestamp': datetime.now().isoformat(),
+            'service': service
+        })
+        
+    except requests.exceptions.Timeout:
+        return jsonify({
+            'status': 'timeout',
+            'message': 'Service did not respond within 5 seconds',
+            'timestamp': datetime.now().isoformat(),
+            'service': service
+        }), 408
+        
+    except requests.exceptions.ConnectionError:
+        return jsonify({
+            'status': 'unreachable',
+            'message': 'Could not connect to service',
+            'timestamp': datetime.now().isoformat(),
+            'service': service
+        }), 503
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'timestamp': datetime.now().isoformat(),
+            'service': service
+        }), 500

@@ -39,6 +39,12 @@
             <button class="nav-tab" onclick="showTab('containers')">
                 <i class="fas fa-box"></i> רישום מכולות
             </button>
+            <button class="nav-tab" onclick="showTab('receipts')">
+                <i class="fas fa-receipt"></i> קבלות
+            </button>
+            <button class="nav-tab" onclick="showTab('control')">
+                <i class="fas fa-chart-line"></i> בקרה
+            </button>
         </nav>
 
         <!-- Main Content -->
@@ -265,6 +271,194 @@
                                     <i class="fas fa-plus"></i> הוסף מכולה
                                 </button>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receipts Tab -->
+            <div id="receipts-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-receipt"></i> קבלות</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="receipt-filters">
+                            <div class="form-group">
+                                <label for="providerId">בחר ספק:</label>
+                                <select id="providerId">
+                                    <option value="">בחר ספק...</option>
+                                    <option value="123456789">חקלאות דן - משק אבוקדו</option>
+                                    <option value="987654321">כרמל פירות - ייצוא הדרים</option>
+                                    <option value="555666777">עמק יזרעאל - גידולי שדה</option>
+                                    <option value="111222333">גליל עליון - פרדסים</option>
+                                    <option value="444555666">שרון חקלאות - ירקות ופירות</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="billFromDate">מתאריך:</label>
+                                <input type="datetime-local" id="billFromDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="billToDate">עד תאריך:</label>
+                                <input type="datetime-local" id="billToDate">
+                            </div>
+                            <button class="btn btn-primary" onclick="generateBill()">
+                                <i class="fas fa-file-invoice"></i> יצירת קבלה
+                            </button>
+                        </div>
+                        
+                        <div id="billResult" class="bill-result" style="display: none;">
+                            <!-- Bill content will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control/Monitoring Tab -->
+            <div id="control-tab" class="tab-content">
+                <div class="monitoring-dashboard">
+                    <!-- System Status Overview -->
+                    <div class="status-overview">
+                        <h2><i class="fas fa-chart-line"></i> מרכז בקרה ומעקב</h2>
+                        <div class="status-cards">
+                            <div class="status-card" id="devops-status">
+                                <div class="status-icon">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <div class="status-info">
+                                    <h3>DevOps</h3>
+                                    <p class="status-text">בודק...</p>
+                                    <span class="status-badge checking">בודק</span>
+                                </div>
+                            </div>
+                            <div class="status-card" id="billing-status">
+                                <div class="status-icon">
+                                    <i class="fas fa-file-invoice-dollar"></i>
+                                </div>
+                                <div class="status-info">
+                                    <h3>חיוב</h3>
+                                    <p class="status-text">בודק...</p>
+                                    <span class="status-badge checking">בודק</span>
+                                </div>
+                            </div>
+                            <div class="status-card" id="weight-status">
+                                <div class="status-icon">
+                                    <i class="fas fa-scale-balanced"></i>
+                                </div>
+                                <div class="status-info">
+                                    <h3>שקילה</h3>
+                                    <p class="status-text">בודק...</p>
+                                    <span class="status-badge checking">בודק</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Real-time Metrics -->
+                    <div class="metrics-section">
+                        <div class="metrics-grid">
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <i class="fas fa-truck"></i>
+                                    <h3>משאיות היום</h3>
+                                </div>
+                                <div class="metric-value" id="trucks-today">0</div>
+                                <div class="metric-change positive" id="trucks-change">+0% מאתמול</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <i class="fas fa-weight-hanging"></i>
+                                    <h3>משקל כולל (טון)</h3>
+                                </div>
+                                <div class="metric-value" id="total-weight">0</div>
+                                <div class="metric-change positive" id="weight-change">+0% מאתמול</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <i class="fas fa-clock"></i>
+                                    <h3>זמן תגובה ממוצע</h3>
+                                </div>
+                                <div class="metric-value" id="avg-response">0ms</div>
+                                <div class="metric-change positive" id="response-change">-0% מאתמול</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <i class="fas fa-percentage"></i>
+                                    <h3>זמינות מערכת</h3>
+                                </div>
+                                <div class="metric-value" id="system-uptime">0%</div>
+                                <div class="metric-change positive" id="uptime-change">+0% מאתמול</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Health Check Controls -->
+                    <div class="health-controls">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-heartbeat"></i> בדיקות תקינות</h3>
+                                <button class="btn btn-primary" onclick="runAllHealthChecks()">
+                                    <i class="fas fa-sync-alt"></i> בדוק הכל
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="health-checks">
+                                    <div class="health-check-item" id="health-devops">
+                                        <div class="health-info">
+                                            <h4>DevOps Service</h4>
+                                            <p>13.126.238.4:8080/health</p>
+                                        </div>
+                                        <div class="health-status">
+                                            <span class="health-badge checking">בודק...</span>
+                                            <button class="btn btn-sm" onclick="checkHealth('devops')">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="health-check-item" id="health-billing">
+                                        <div class="health-info">
+                                            <h4>Billing Service</h4>
+                                            <p>13.126.238.4:8081/health</p>
+                                        </div>
+                                        <div class="health-status">
+                                            <span class="health-badge checking">בודק...</span>
+                                            <button class="btn btn-sm" onclick="checkHealth('billing')">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="health-check-item" id="health-weight">
+                                        <div class="health-info">
+                                            <h4>Weight Service</h4>
+                                            <p>13.126.238.4:8082/health</p>
+                                        </div>
+                                        <div class="health-status">
+                                            <span class="health-badge checking">בודק...</span>
+                                            <button class="btn btn-sm" onclick="checkHealth('weight')">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activity Log -->
+                    <div class="activity-log">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-list"></i> יומן פעילות</h3>
+                                <button class="btn btn-secondary" onclick="clearActivityLog()">
+                                    <i class="fas fa-trash"></i> נקה
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="activity-log-content" class="activity-log-content">
+                                    <!-- Activity log entries will be added here -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
