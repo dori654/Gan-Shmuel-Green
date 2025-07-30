@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from dotenv import load_dotenv
 from .routes import api    # Your Blueprint with /weight endpoint
 from app.db import get_db_connection # Your DB connection and init_app()
@@ -7,6 +8,10 @@ from app.db import get_db_connection # Your DB connection and init_app()
 def create_app():
     load_dotenv()
     app = Flask(__name__)
+    
+    # Enable CORS for all routes and origins (for Docker networking)
+    CORS(app, origins=['*'], methods=['GET', 'POST', 'OPTIONS'], allow_headers=['Content-Type'])
+    
     app.register_blueprint(api)
     
     @app.route("/health", methods=["GET"])
