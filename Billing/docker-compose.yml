@@ -1,22 +1,20 @@
+version: '3.8'
 services:
   db:
     image: mysql:8.0
     container_name: mysql-db
-    restart: always
-    env_file:
-      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE:      ${MYSQL_DATABASE}
+      MYSQL_USER:          ${MYSQL_USER}
+      MYSQL_PASSWORD:      ${MYSQL_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - backend
 
-  flask:
+  flask-app:
     build:
       context: ./app
     container_name: flask-app
@@ -24,18 +22,21 @@ services:
       - db
     ports:
       - "8081:5000"
+    env_file:
+      - .env                      # ← read in FLASK_SECRET_KEY (and your DB_ vars if you like)
     environment:
-      DB_HOST: db
-      DB_NAME: ${MYSQL_DATABASE}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_HOST:      db
+      DB_NAME:      ${MYSQL_DATABASE}
+      DB_USER:      ${MYSQL_USER}
+      DB_PASSWORD:  ${MYSQL_PASSWORD}
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}  # ← now available inside the container
     volumes:
-    - ./app/in/rates.xlsx:/app/in/rates.xlsx
-    - ./logs:/app/logs
+      - ./app/templates:/app/templates
     networks:
       - backend
 
 networks:
   backend:
+
 volumes:
   mysql_data:

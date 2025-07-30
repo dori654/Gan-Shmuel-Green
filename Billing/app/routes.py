@@ -315,7 +315,7 @@ def totalbill(provider_id):
 
     for truck_id in trucks:
         logging.debug(f"Processing truck_id={truck_id}")
-        res = requests.get("http://weight-app:5000/weight", params={**payload, "truck": truck_id})
+        res = requests.get("http://13.126.238.4:8082/weight", params={**payload, "truck": truck_id})
         if res.status_code != 200:
             continue
         for rec in res.json():
@@ -393,6 +393,7 @@ def health_ui():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT 1")
+        cursor.fetchone()       # ← consume the result
         cursor.close()
         conn.close()
         status = "OK"
@@ -409,6 +410,7 @@ def providers_ui():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id, name FROM Provider ORDER BY name")
+        cursor.fetchone() 
         providers = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -648,7 +650,7 @@ def bills_ui():
             
             for truck_id in trucks:
                 try:
-                    res = requests.get("http://weight-app:5000/weight", 
+                    res = requests.get("http://13.126.238.4:8082/weight", 
                                      params={**payload, "truck": truck_id})
                     if res.status_code != 200:
                         continue
