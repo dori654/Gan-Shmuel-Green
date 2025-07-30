@@ -77,7 +77,7 @@ def run_ci_pipeline(payload):
     try:
         notify_slack(f"CI Started for branch: `{branch}` by `{pusher_name}`. Commit: `{commit_message}`")
 
-        if branch == "devops_build_tests":
+        if branch == "devops":
           run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /builder")
           os.chdir("/builder")
 
@@ -85,7 +85,7 @@ def run_ci_pipeline(payload):
           try:
               
             # pull the latest commit
-            #git fetch origin devops_build_tests
+            #git fetch origin {branch}
             print(f"Pulling latest commit for branch: {branch}")
             sync_branch(branch)
 
