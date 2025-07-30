@@ -13,7 +13,7 @@ services:
       - db_data:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
     ports:
-      - “3306:3306”
+      - 8090:3306
     healthcheck:
       test: [“CMD”, “mysqladmin”, “ping”, “-h”, “localhost”]
       interval: 5s
