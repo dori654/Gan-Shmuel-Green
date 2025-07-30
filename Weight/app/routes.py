@@ -24,20 +24,10 @@ def get_kobi():
     })
 
 
-#send to http://localhost:8081/dori
-@api.route('/dori', methods=['GET'])
-def get_dori():
+@api.route('/test_for_devops3', methods=['GET'])
+def get_test_for_devops3():
     return jsonify({
-        'dori': 'Gan Shmuel Green',
-        'version': '1.0.0',
-        'description': 'API for managing truck weights and transactions'
-    })
-
-#send to http://localhost:8081/test_for_devops2
-@api.route('/test_for_devops2', methods=['GET'])
-def get_test_for_devops2():
-    return jsonify({
-        'test_for_devops2': 'Gan Shmuel Green',
+        'test_for_devops3': 'Gan Shmuel Green',
         'version': '1.0.0',
         'description': 'API for managing truck weights and transactions'
     })

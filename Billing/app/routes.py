@@ -15,7 +15,6 @@ def get_kobi():
         'description': 'API for managing truck weights and transactions'
     })
 
-#get from http://localhost:8082/dori
 routes.route('/dori', methods=['POST'])
 def post_dori():
     data = request.get_json()
@@ -24,8 +23,7 @@ def post_dori():
     message = data['message']
     return jsonify({'message': f'Dori received: {message}'}), 200
 
-#get from http://localhost:8082/test_for_devops2
-@routes.route('/test_for_devops', methods=['GET'])
+@routes.route('/test_for_devops2', methods=['GET'])
 def get_test_for_devops():
     return jsonify({
         'test_for_devops': 'Gan Shmuel Green',
