@@ -23,7 +23,7 @@ services:
       context: .
     container_name: weight-app
     ports:
-      - 8081:5000”
+      - 8082:5000
     depends_on:
       db:
         condition: service_healthy
