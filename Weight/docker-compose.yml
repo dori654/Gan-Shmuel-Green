@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: mysql:8.0
@@ -12,15 +14,17 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
     ports:
       - "3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       retries: 10
-    command: --default-time-zone='+03:00'
+    # command: --default-time-zone='+03:00'
+    networks:
+      - backend_net
 
   app:
     build:
@@ -41,9 +45,11 @@ services:
     volumes:
       - ./app:/app/app
       - ./tests:/app/tests
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
     command: ["python", "-m", "app.main"]
+    networks:
+      - backend_net
 
   frontend:
     build:
@@ -58,8 +64,12 @@ services:
       TZ: Asia/Jerusalem
     volumes:
       - ./frontend:/usr/src/app
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
+    networks:
+      - backend_net
 
 volumes:
   db_data: {}
+
+networks:
+  backend_net:
+    driver: bridge
