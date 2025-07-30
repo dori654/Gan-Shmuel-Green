@@ -2,12 +2,26 @@
 {% block title %}Trucks{% endblock %}
 {% block content %}
   <h2>Trucks</h2>
-  <a class="btn btn-primary mb-3" href="{{ url_for('routes.truck_form') }}">New Truck</a>
-  <table class="table">
-    <thead><tr><th>Plate</th><th>Provider</th></tr></thead>
+<a class="btn btn-info btn-sm"
+   href="{{ url_for('routes.trucks_data_ui', truck_id=plate) }}">
+   Truck details
+</a>  <table class="table">
+    <thead>
+      <tr>
+        <th>Plate</th>
+        <th>Provider</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
     <tbody>
-      {% for plate,provider in trucks %}
-      <tr><td>{{ plate }}</td><td>{{ provider }}</td></tr>
+      {% for plate, provider in trucks %}
+      <tr>
+        <td>{{ plate }}</td>
+        <td>{{ provider }}</td>
+        <td>
+          <a class="btn btn-info btn-sm" href="{{ url_for('routes.get_truck_data', truck_id=plate) }}"> Truck details</a>
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>

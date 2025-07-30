@@ -12,7 +12,7 @@
   <h3 class="mt-4">Existing Files</h3>
   <ul>
     {% for f in files %}
-    <li><a href="{{ url_for('rates_ui') }}?download={{ f }}">{{ f }}</a></li>
+    <li><a href="{{ url_for('routes.rates_ui') }}?download={{ f }}">{{ f }}</a></li>
     {% endfor %}
   </ul>
 {% endblock %}

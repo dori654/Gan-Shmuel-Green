@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Provider Created{% endblock %}
+
+{% block content %}
+  <h2>Provider Created</h2>
+
+  <a class="btn btn-success" href="{{ url_for('routes.providers_ui') }}"> חזרה לרשימת הספקים</a>
+  <a class="btn btn-success" href="{{ url_for('routes.provider_form') }}"> יצירת ספק נוסף</a>
+{% endblock %}

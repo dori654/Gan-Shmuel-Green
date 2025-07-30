@@ -315,7 +315,7 @@ def totalbill(provider_id):
 
     for truck_id in trucks:
         logging.debug(f"Processing truck_id={truck_id}")
-        res = requests.get("http://13.126.238.4:8082/weight", params={**payload, "truck": truck_id})
+        res = requests.get("http://weight-app:5000/weight", params={**payload, "truck": truck_id})
         if res.status_code != 200:
             continue
         for rec in res.json():
@@ -393,7 +393,6 @@ def health_ui():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT 1")
-        cursor.fetchone()       # ← consume the result
         cursor.close()
         conn.close()
         status = "OK"
@@ -410,7 +409,6 @@ def providers_ui():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id, name FROM Provider ORDER BY name")
-        cursor.fetchone() 
         providers = cursor.fetchall()
         cursor.close()
         conn.close()
@@ -436,8 +434,8 @@ def provider_form():
             conn.commit()
             cursor.close()
             conn.close()
-            flash(f"Provider '{name}' created successfully", "success")
-            return redirect(url_for('routes.providers_ui'))
+            return render_template('provider_success.html', provider_name=name)
+        
         except mysql.connector.IntegrityError:
             flash("Provider already exists", "danger")
         except Exception as e:
@@ -445,6 +443,48 @@ def provider_form():
             flash("Error creating provider", "danger")
     
     return render_template('providers_form.html')
+
+@routes.route('/ui/providers/<int:provider_id>/edit', methods=['GET', 'POST'])
+def provider_edit(provider_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        if not name:
+            flash("Provider name is required", "danger")
+            cursor.execute("SELECT id, name FROM Provider WHERE id=%s", (provider_id,))
+            provider = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            return render_template('provider_edit.html', provider=provider)
+        
+        try:
+            cursor.execute("UPDATE Provider SET name=%s WHERE id=%s", (name, provider_id))
+            conn.commit()
+            flash(f"Provider '{name}' updated successfully", "success")
+            cursor.close()
+            conn.close()
+            return redirect(url_for('routes.providers_ui'))
+        except mysql.connector.IntegrityError:
+            flash("Provider with this name already exists", "danger")
+        except Exception as e:
+            logging.exception("Error updating provider")
+            flash("Error updating provider", "danger")
+
+        cursor.close()
+        conn.close()
+        return render_template('provider_edit.html', provider={'id': provider_id, 'name': name})
+
+    else:
+        cursor.execute("SELECT id, name FROM Provider WHERE id=%s", (provider_id,))
+        provider = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if provider is None:
+            flash("Provider not found", "danger")
+            return redirect(url_for('routes.providers_ui'))
+        return render_template('provider_edit.html', provider=provider)
 
 @routes.route('/ui/trucks')
 def trucks_ui():
@@ -494,7 +534,6 @@ def truck_form():
             logging.exception("Error creating truck")
             flash("Error registering truck", "danger")
     
-    # Get providers for dropdown
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -508,6 +547,56 @@ def truck_form():
         flash("Error fetching providers", "danger")
     
     return render_template('truck_form.html', providers=providers)
+
+@routes.route('/ui/trucks/data', methods=['GET', 'POST'])
+def trucks_data_ui():
+    result = None
+    error = None
+
+    if request.method == 'POST':
+        truck_id = request.form.get('truck_id', '').strip()
+        t1 = request.form.get('from', '').strip()
+        t2 = request.form.get('to', '').strip()
+    else:
+        truck_id = request.args.get('truck_id', '').strip()
+        t1 = request.args.get('from', '').strip()
+        t2 = request.args.get('to', '').strip()
+
+    def format_date(d):
+        try:
+            return datetime.strptime(d, '%Y-%m-%dT%H:%M').strftime('%Y%m%d%H%M%S')
+        except Exception:
+            return None
+
+    from_str = format_date(t1) if t1 else None
+    to_str = format_date(t2) if t2 else None
+
+    if truck_id:
+        try:
+            with current_app.test_request_context(f'/truck/{truck_id}?from={from_str}&to={to_str}'):
+                resp = get_truck_data(truck_id)
+                if resp.status_code == 200:
+                    result = resp.get_json()
+                else:
+                    error = resp.get_json().get('error', 'Unknown error')
+        except Exception as e:
+            logging.exception("Error in truck data fetch")
+            error = str(e)
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM Trucks ORDER BY id")
+        trucks = [row[0] for row in cursor.fetchall()]
+        cursor.close()
+        conn.close()
+    except Exception as e:
+        logging.exception("Error fetching trucks")
+        trucks = []
+        flash("Error fetching trucks", "danger")
+
+    return render_template('trucks_data.html', trucks=trucks, result=result, error=error)
+
 
 @routes.route('/ui/rates', methods=['GET', 'POST'])
 def rates_ui():
@@ -650,7 +739,7 @@ def bills_ui():
             
             for truck_id in trucks:
                 try:
-                    res = requests.get("http://13.126.238.4:8082/weight", 
+                    res = requests.get("http://weight-app:5000/weight", 
                                      params={**payload, "truck": truck_id})
                     if res.status_code != 200:
                         continue

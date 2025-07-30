@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Edit Provider{% endblock %}
+
+{% block content %}
+  <h2>Edit Provider</h2>
+
+  <form method="POST">
+    <div class="mb-3">
+      <label for="name" class="form-label">Name</label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        class="form-control"
+        required
+        value="{{ provider[1] if provider else '' }}"
+      >
+    </div>
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a href="{{ url_for('routes.providers_ui') }}" class="btn btn-secondary">Cancel</a>
+  </form>
+{% endblock %}

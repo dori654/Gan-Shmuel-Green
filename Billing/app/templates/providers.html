@@ -6,9 +6,15 @@
   <table class="table table-striped">
     <thead><tr><th>ID</th><th>Name</th></tr></thead>
     <tbody>
-      {% for id,name in providers %}
-      <tr><td>{{ id }}</td><td>{{ name }}</td></tr>
-      {% endfor %}
-    </tbody>
+  {% for id, name in providers %}
+  <tr>
+    <td>{{ id }}</td>
+    <td>{{ name }}</td>
+    <td>
+      <a href="{{ url_for('routes.provider_edit', provider_id=id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
   </table>
 {% endblock %}

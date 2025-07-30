@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Truck Data{% endblock %}
+
+{% block content %}
+  <h2>Get Truck Data</h2>
+
+  <form method="POST" class="mb-4">
+    <div class="mb-3">
+      <label for="truck_id" class="form-label">Truck ID</label>
+      <select id="truck_id" name="truck_id" class="form-select" required>
+        <option value="">Select truck</option>
+        {% for truck in trucks %}
+          <option value="{{ truck }}">{{ truck }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="from" class="form-label">From (optional)</label>
+      <input type="datetime-local" id="from" name="from" class="form-control">
+    </div>
+
+    <div class="mb-3">
+      <label for="to" class="form-label">To (optional)</label>
+      <input type="datetime-local" id="to" name="to" class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Get Data</button>
+  </form>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+    <h3>Results for Truck {{ result.id }}</h3>
+    <p><strong>Tara:</strong> {{ result.tara if result.tara else 'No data' }}</p>
+    <p><strong>Sessions:</strong></p>
+    <ul>
+      {% for session in result.sessions %}
+        <li>{{ session }}</li>
+      {% else %}
+        <li>No sessions found</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}
