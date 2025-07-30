@@ -5,38 +5,37 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      TZ: Asia/Jerusalem
+      MYSQL_DATABASE:     ${DB_NAME}
+      MYSQL_USER:         ${DB_USER}
+      MYSQL_PASSWORD:     ${DB_PASSWORD}
+      TZ:                 Asia/Jerusalem
     volumes:
       - db_data:/var/lib/mysql
       - ./weightdb.sql:/docker-entrypoint-initdb.d/weightdb.sql
     ports:
-      - 8090:3306
+      - "8090:3306"
     healthcheck:
-      test: [“CMD”, “mysqladmin”, “ping”, “-h”, “localhost”]
+      test:     ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
-      retries: 10
+      retries:  10
+
   app:
     build:
       context: .
     container_name: weight-app
     ports:
-      - 8082:5000
+      - "8082:5000"
     depends_on:
       db:
         condition: service_healthy
     environment:
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_USER: ${DB_USER}
+      DB_HOST:     db
+      DB_PORT:     3306
+      DB_USER:     ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      TZ: Asia/Jerusalem
-    # volumes:
-      # - ./app:/app/app  # Mount just your app code for hot-reload (optional)
-      # - ./tests:/app/tests
+      DB_NAME:     ${DB_NAME}
+      TZ:           Asia/Jerusalem
     command: ["python", "-m", "app.main"]
+
 volumes:
   db_data: {}
