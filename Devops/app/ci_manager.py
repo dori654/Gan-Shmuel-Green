@@ -77,7 +77,7 @@ def run_ci_pipeline(payload):
     try:
         notify_slack(f"CI Started for branch: `{branch}` by `{pusher_name}`. Commit: `{commit_message}`")
 
-        if branch == "dev":
+        if branch == "dev_builds":
           run_cmd("clone repo", "git clone https://github.com/dori654/Gan-Shmuel-Green.git /builder")
           os.chdir("/builder")
 
