@@ -1,5 +1,5 @@
 // Configuration
-const API_BASE_URL = 'http://localhost:5000'; // Adjust this to match your Flask backend URL
+const API_BASE_URL = 'http://localhost:8082'; // Adjust this to match your Flask backend URL
 
 // Global state
 let trucks = [];

@@ -11,7 +11,7 @@ import sys
 # Change to the frontend directory
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-PORT = 8080
+PORT = 8083
 
 class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
