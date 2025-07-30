@@ -15,7 +15,7 @@ COPY . .
 RUN chmod +x server.py
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8083
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
