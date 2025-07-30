@@ -6,3 +6,6 @@ docker build -t ci .
 docker run -d -it --name ci_container \
   -p 8080:8080 \
   ci
+
+
+  
