@@ -23,17 +23,13 @@ def get_kobi():
         'description': 'API for managing truck weights and transactions'
     })
 
-
-#send to http://localhost:8081/dori
-@api.route('/dori', methods=['GET'])
-def get_dori():
+@api.route('/new-feature', methods=['GET'])
+def get_new_feature():
     return jsonify({
-        'dori': 'Gan Shmuel Green',
+        'kobi': 'this is a new feature',
         'version': '1.0.0',
         'description': 'API for managing truck weights and transactions'
     })
-
-
 
 @api.route('/weight', methods=['POST'])
 def post_weight():
