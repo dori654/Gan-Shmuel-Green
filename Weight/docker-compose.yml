@@ -1,4 +1,3 @@
-
 services:
   db:
     image: mysql:8.0
@@ -28,9 +27,9 @@ services:
       context: .
     container_name: weight-app
     ports:
-      - "5000:5000"
+      - "8081:5000"
     depends_on:
-      db: 
+      db:
         condition: service_healthy
     environment:
       DB_HOST: db
@@ -40,7 +39,7 @@ services:
       DB_NAME: ${DB_NAME}
       TZ: Asia/Jerusalem
     volumes:
-      - ./app:/app/app  # Mount just your app code for hot-reload (optional)
+      - ./app:/app/app
       - ./tests:/app/tests
     command: ["python3", "-m", "app.main"]
 
@@ -59,4 +58,4 @@ services:
       - ./frontend:/usr/src/app
 
 volumes:
-  db_data: {} 
+  db_data: {}

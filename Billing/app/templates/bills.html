@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Bills{% endblock %}
+{% block content %}
+  <h2>Generate Bill</h2>
+  <form method="post" class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">Provider</label>
+      <select name="provider_id" class="form-select" required>
+        <option value="">Choose…</option>
+        {% for id,name in providers %}
+        <option value="{{ id }}">{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">From (yyyymmddHHMMSS)</label>
+      <input name="from" class="form-control">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">To (yyyymmddHHMMSS)</label>
+      <input name="to" class="form-control">
+    </div>
+    <div class="col-md-2 align-self-end">
+      <button class="btn btn-success w-100">Fetch</button>
+    </div>
+  </form>
+
+  {% if bill %}
+    <hr>
+    <h3>Bill for {{ bill.name }}</h3>
+    <p>
+      From {{ bill.from }} to {{ bill.to }}<br>
+      Trucks: {{ bill.truckCount }}  —  Sessions: {{ bill.sessionCount }}
+    </p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Product</th><th>Count</th><th>Amount (kg)</th><th>Rate (¢)</th><th>Pay (¢)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in bill.products %}
+        <tr>
+          <td>{{ p.product }}</td>
+          <td>{{ p.count }}</td>
+          <td>{{ p.amount }}</td>
+          <td>{{ p.rate }}</td>
+          <td>{{ p.pay }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><th colspan="4">Total</th><th>{{ bill.total }}</th></tr>
+      </tfoot>
+    </table>
+  {% endif %}
+{% endblock %}

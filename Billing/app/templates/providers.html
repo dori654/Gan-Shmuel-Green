@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Providers{% endblock %}
+{% block content %}
+  <h2>Providers</h2>
+  <a class="btn btn-primary mb-3" href="{{ url_for('provider_form') }}">New Provider</a>
+  <table class="table table-striped">
+    <thead><tr><th>ID</th><th>Name</th></tr></thead>
+    <tbody>
+      {% for id,name in providers %}
+      <tr><td>{{ id }}</td><td>{{ name }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
