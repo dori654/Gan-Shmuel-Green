@@ -47,24 +47,24 @@ services:
     networks:
       - backend_net
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: weight-frontend
-    depends_on:
-      - app
-    environment:
-      TZ: Asia/Jerusalem
-    ports:
-      - "8083:8083"
-    volumes:
-      - ./frontend:/usr/src/app
-    networks:
-      - backend_net
+#   frontend:
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#     container_name: weight-frontend
+#     depends_on:
+#       - app
+#     environment:
+#       TZ: Asia/Jerusalem
+#     ports:
+#       - "8083:8083"
+#     volumes:
+#       - ./frontend:/usr/src/app
+#     networks:
+#       - backend_net
 
-volumes:
-  db_data: {}
+# volumes:
+#   db_data: {}
 
 networks:
   backend_net:
