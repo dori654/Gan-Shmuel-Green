@@ -31,6 +31,14 @@ def get_new_feature():
         'description': 'API for managing truck weights and transactions'
     })
 
+@api.route('/new-feature-demo', methods=['GET'])
+def get_new_feature_demo():
+    return jsonify({
+        'kobi': 'this is a new feature demo',
+        'version': '1.0.0',
+        'description': 'API for managing truck weights and transactions'
+    })
+
 @api.route('/weight', methods=['POST'])
 def post_weight():
     data = request.get_json()
