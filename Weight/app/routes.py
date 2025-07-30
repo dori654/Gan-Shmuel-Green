@@ -78,7 +78,7 @@ def post_weight():
         """, (now, 'in', truck, containers_str, weight, produce))
 
         conn.commit()
-        return jsonify({'message': 'Truck IN recorded', 'bruto': weight}), 201
+        return jsonify({'id': str(cursor.lastrowid), 'truck': truck if truck else 'na', 'bruto': weight}), 201
 
     elif direction == 'out':
         # Find last unmatched 'in' transaction
@@ -123,7 +123,8 @@ def post_weight():
         """, (now, 'out', truck, containers_str, bruto, truckTara, neto, produce))
 
         conn.commit()
-        return jsonify({'message': 'Truck OUT recorded', 'neto': neto}), 201
+        return jsonify({'message': 'Truck OUT recorded', 'truckTara': truckTara, 'neto': neto}), 201
+
 
     else:
         return jsonify({'error': 'Direction must be "in" or "out"'}), 400
@@ -214,7 +215,7 @@ def get_weight():
     # Build SQL query dynamically
     placeholders = ",".join(["%s"] * len(filters))
     query = f"""
-        SELECT id, direction, bruto, neto, produce, containers
+        SELECT id, datetime, direction, truck, containers, bruto, truckTara, neto, produce
         FROM transactions
         WHERE datetime BETWEEN %s AND %s
         AND direction IN ({placeholders})
@@ -230,6 +231,7 @@ def get_weight():
             row["neto"] = "na"
 
     return jsonify(results), 200
+
     
 
 @api.route('/unknown', methods=['GET'])
@@ -279,12 +281,12 @@ def get_session(session_id):
 
     truck = in_tx["truck"]
 
-    # Look for matching OUT transaction for same truck, after the in
+    # Look for matching OUT transaction for same truck, after or equal to IN datetime, and not the same row
     cursor.execute("""
         SELECT * FROM transactions 
-        WHERE truck = %s AND direction = 'out' AND datetime > %s 
+        WHERE truck = %s AND direction = 'out' AND datetime >= %s AND id != %s
         ORDER BY datetime ASC LIMIT 1
-    """, (truck, in_tx["datetime"]))
+    """, (truck, in_tx["datetime"], in_tx["id"]))
     out_tx = cursor.fetchone()
 
     # Build response
@@ -298,4 +300,63 @@ def get_session(session_id):
         response["truckTara"] = out_tx["truckTara"]
         response["neto"] = out_tx["neto"] if out_tx["neto"] is not None else "na"
 
+    return jsonify(response), 200
+
+
+#  GET /item/<id>?from=t1&to=t2
+@api.route("/item/<get_id>", methods=["GET"], strict_slashes=False)  
+def get_item(get_id):
+    # Get query parameters and times
+    from_param = request.args.get("from")
+    to_param = request.args.get("to")
+
+    # Parse datetime strings (format: yyyymmddhhmmss)
+    def parse_timestamp(ts, default):
+        try:
+            return datetime.strptime(ts, "%Y%m%d%H%M%S")
+        except:
+            return default
+
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    from_time = parse_timestamp(from_param, today_start)
+    to_time = parse_timestamp(to_param, now)
+
+    # Get DB connection
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+  
+   # Check if it's a truck id in the "transactions" table
+    cursor.execute("""
+    SELECT id, truckTara 
+    FROM transactions 
+    WHERE datetime BETWEEN %s AND %s AND truck = %s
+    """, (from_time, to_time, get_id))
+    truck_results = cursor.fetchall()
+
+    if truck_results:
+        session_id = [row["id"] for row in truck_results] # List Comprehension (result=list)
+        tara = truck_results[-1]["truckTara"] 
+
+    # If it's not a truck id then fetch container weight from "containers_registered" table
+    else:
+    # Check containers_registered table
+        cursor.execute("""SELECT weight FROM containers_registered WHERE container_id LIKE %s
+                        """, (f"%{get_id}%",))  
+        container_results = cursor.fetchall()
+
+        if container_results:
+            tara = [row["weight"] for row in container_results]
+         # Now fetch session id from "transactions" table 
+            cursor.execute(""" SELECT id FROM transactions WHERE datetime BETWEEN %s AND %s AND containers = %s
+         """, (from_time, to_time, get_id))
+            session_result = cursor.fetchall()
+            session_id = [row["id"] for row in session_result]
+        else:
+            return jsonify({"error": "Item not found"}), 404
+
+    # Prepare response
+    response = {"id": get_id,
+                "tara": tara if tara is not None else "na",
+                "sessions": session_id}
     return jsonify(response), 200
