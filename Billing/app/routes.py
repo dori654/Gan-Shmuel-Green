@@ -10,7 +10,14 @@ from werkzeug.utils import secure_filename
 
 routes = Blueprint("routes", __name__)
 
-# Existing API routes
+# @routes.route('/kobi', methods=['GET'])
+# def get_kobi():
+#     return jsonify({
+#         'kobi': 'Gan Shmuel Green',
+#         'version': '1.0.0',
+#         'description': 'API for managing truck weights and transactions'
+#     })
+
 @routes.route('/')
 def index():
     try:
