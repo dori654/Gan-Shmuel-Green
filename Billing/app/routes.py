@@ -7,29 +7,13 @@ from db import get_db_connection
 
 routes = Blueprint("routes", __name__)
 
-@routes.route('/kobi', methods=['GET'])
-def get_kobi():
-    return jsonify({
-        'kobi': 'Gan Shmuel Green',
-        'version': '1.0.0',
-        'description': 'API for managing truck weights and transactions'
-    })
-
-routes.route('/dori', methods=['POST'])
-def post_dori():
-    data = request.get_json()
-    if not data or 'message' not in data:
-        return jsonify({'error': 'Invalid input'}), 400
-    message = data['message']
-    return jsonify({'message': f'Dori received: {message}'}), 200
-
-@routes.route('/test_for_devops2', methods=['GET'])
-def get_test_for_devops():
-    return jsonify({
-        'test_for_devops': 'Gan Shmuel Green',
-        'version': '1.0.0',
-        'description': 'API for managing truck weights and transactions'
-    })
+# @routes.route('/kobi', methods=['GET'])
+# def get_kobi():
+#     return jsonify({
+#         'kobi': 'Gan Shmuel Green',
+#         'version': '1.0.0',
+#         'description': 'API for managing truck weights and transactions'
+#     })
 
 @routes.route('/')
 def index():
