@@ -24,6 +24,15 @@ def post_dori():
     message = data['message']
     return jsonify({'message': f'Dori received: {message}'}), 200
 
+#get from http://localhost:8082/test_for_devops
+@routes.route('/test_for_devops', methods=['GET'])
+def get_test_for_devops():
+    return jsonify({
+        'test_for_devops': 'Gan Shmuel Green',
+        'version': '1.0.0',
+        'description': 'API for managing truck weights and transactions'
+    })
+
 @routes.route('/')
 def index():
     conn = get_db_connection()

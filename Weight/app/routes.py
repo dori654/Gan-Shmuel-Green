@@ -33,6 +33,15 @@ def get_dori():
         'description': 'API for managing truck weights and transactions'
     })
 
+#send to http://localhost:8081/dori
+@api.route('/test_for_devops', methods=['GET'])
+def get_test_for_devops():
+    return jsonify({
+        'test_for_devops': 'Gan Shmuel Green',
+        'version': '1.0.0',
+        'description': 'API for managing truck weights and transactions'
+    })
+
 
 
 @api.route('/weight', methods=['POST'])
